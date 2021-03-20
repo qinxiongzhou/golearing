@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-func main() {
+func main(){
 	fmt.Println("Hello ")
 	if len(os.Args) > 1 {
 		fmt.Println(os.Args[1])
