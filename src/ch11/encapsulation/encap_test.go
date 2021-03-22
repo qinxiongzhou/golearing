@@ -1,12 +1,15 @@
 package encapsulation
 
-import "testing"
+import (
+	"testing"
+)
 
 type Employee struct {
 	Id string
 	Name string
 	Age int
 }
+
 
 func TestCreateEmployeeObj(t *testing.T) {
 	e := Employee{"0", "Bob", 20}
@@ -26,3 +29,4 @@ func TestCreateEmployeeObj(t *testing.T) {
 	t.Logf("e is %T",e) //e is encapsulation.Employee
 	t.Logf("e2 is %T",e2) //e2 is *encapsulation.Employee
 }
+
