@@ -1,8 +1,8 @@
 # golearing
-#### Go 语言学习的测试案例，从入门开始
-#### 实实在在操一边，才能真正掌握。
+Go 语言学习的测试案例，从入门开始
+实实在在操一边，才能真正掌握。
 
-### Thread vs. Groutine
+## Thread vs. Groutine
 #### 1. 创建时默认的stack的大小
 * JDK5以后Java Thread stack默认为1M
 * Groutine 的stack初始化大小为2K
