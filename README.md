@@ -43,18 +43,18 @@ func TestCounterWaitGroup(t *testing.T) {
 ## WaitGroup
 ```go
 func TestCounterWaitGroup(t *testing.T) {
-	var wg sync.WaitGroup
-	counter := 0
-	for i := 0; i < 5000; i++ {
-		wg.Add(1)
-		go func() {
-			//相当于java的finally
-			defer func() {
-                wg.Done()
-			}()
-		}()
-	}
-	wg.Wait()
+    var wg sync.WaitGroup
+    counter := 0
+        for i := 0; i < 5000; i++ {
+            wg.Add(1)
+            go func() {
+                //相当于java的finally
+                defer func() {
+                    wg.Done()
+                }()
+            }()
+        }
+    wg.Wait()
 }
 ```
 详情请见:src/ch17/share_mem/share_mem_test.go
