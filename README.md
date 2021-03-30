@@ -147,6 +147,7 @@ func TestAsynService(t *testing.T) {
 	}
 }
 ```
+详情请见:src/ch19/select/select_test.go
 
 ## channel的关闭和广播
 
@@ -197,7 +198,7 @@ func TestCloseChannel(t *testing.T) {
 	wg.Wait()
 }
 ```
-
+详情请见:src/ch20/channel_close/channel_close_test.go
 
 
 
