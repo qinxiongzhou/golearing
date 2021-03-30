@@ -37,9 +37,11 @@ func TestCloseChannel(t *testing.T) {
 	ch := make(chan int,100)
 	wg.Add(1)
 	dataProducer(ch,&wg)
+
 	wg.Add(1)
 	dataReceiver(ch,&wg)
 	wg.Add(1)
 	dataReceiver(ch,&wg)
+	
 	wg.Wait()
 }
