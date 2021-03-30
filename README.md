@@ -147,3 +147,66 @@ func TestAsynService(t *testing.T) {
 	}
 }
 ```
+
+## channel的关闭和广播
+
+* 向关闭的channel发送数据，会导致panic
+* v,ok<-ch;ok为bool值，true表示正常接受，false表示通道关闭
+* 所有的channel消费者都会在channel关闭时，立刻从阻塞等待中返回上述OK值为false。
+这个广播机制常被利用，进行向多个订阅者同时发送信号。如：退出信号
+* 所有的channel消费者都会在channel关闭时，如果是buffer channel，channel中还有数据，返回的OK值为true；如果没有数据，返回的OK值为false
+
+
+```go
+
+func dataProducer(ch chan int, wg *sync.WaitGroup) {
+	go func() {
+		for i := 0; i < 90; i++ {
+			ch <- i
+			fmt.Printf("dataProducer insert data %d \n",i)
+		}
+		close(ch) //关闭channel
+		wg.Done()
+		fmt.Println("channel close!!!")
+	}()
+}
+
+func dataReceiver(ch chan int,wg *sync.WaitGroup)  {
+	go func() {
+		for {
+			if data, ok := <-ch; ok {
+				fmt.Println(data)
+			}else {
+				fmt.Println("channel close")
+				break
+			}
+		}
+		wg.Done()
+	}()
+}
+
+func TestCloseChannel(t *testing.T) {
+	var wg sync.WaitGroup
+	ch := make(chan int,100)
+	wg.Add(1)
+	dataProducer(ch,&wg)
+	wg.Add(1)
+	dataReceiver(ch,&wg)
+	wg.Add(1)
+	dataReceiver(ch,&wg)
+	wg.Wait()
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
