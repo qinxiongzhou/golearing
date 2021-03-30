@@ -14,6 +14,8 @@ Go 语言学习的测试案例，从入门开始
 
 ![kernel_switch_entity](/images/kernel_switch_entity.png)
 
+![gmp模型](/images/gmp.png)
+
 ```go
 for i := 0; i < 10; i++ {
     go func (j int){
