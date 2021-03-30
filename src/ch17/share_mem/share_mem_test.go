@@ -47,10 +47,10 @@ func TestCounterWaitGroup(t *testing.T) {
 			//相当于java的finally
 			defer func() {
 				mut.Unlock()
+				wg.Done()
 			}()
 			mut.Lock()
 			counter++
-			wg.Done()
 		}()
 	}
 	wg.Wait()
