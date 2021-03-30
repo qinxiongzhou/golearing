@@ -116,3 +116,34 @@ func TestAsynService(t *testing.T) {
 ```
 
 详情请见:src/ch18/csp/async_service_test.go
+
+## select 多路选择和超时
+
+![select多路选择和超时](/images/select.png)
+
+```go
+func service() string {
+	time.Sleep(time.Microsecond * 500)
+	return "Done"
+}
+
+func asyncService() chan string	{
+	retCh := make(chan string,1)
+	go func() {
+		ret := service()
+		fmt.Println("returned result.")
+		retCh <- ret
+		fmt.Println("service exited")
+	}()
+	return retCh
+}
+
+func TestAsynService(t *testing.T) {
+	select {
+	case ret:= <-asyncService():
+		t.Log(ret)
+	case <-time.After(time.Millisecond * 50):
+		t.Error("timeout")
+	}
+}
+```
