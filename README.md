@@ -53,7 +53,7 @@ func TestCounterWaitGroup(t *testing.T) {
 ```
 详情请见:src/ch17/share_mem/share_mem_test.go
 
-## WaitGroup
+## WaitGroup 等待组
 主线程为了等待goroutine都运行完毕，不得不在程序的末尾使用time.Sleep() 来睡眠一段时间，等待其他线程充分运行。对于简单的代码，100个for循环可以在1秒之内运行完毕，time.Sleep() 也可以达到想要的效果。
 
 但是对于实际生活的大多数场景来说，1秒是不够的，并且大部分时候我们都无法预知for循环内代码运行时间的长短。这时候就不能使用time.Sleep() 来完成等待操作了。WaitGroup就可以登上舞台了。
@@ -77,3 +77,42 @@ func TestCounterWaitGroup(t *testing.T) {
 }
 ```
 详情请见:src/ch17/share_mem/share_mem_test.go
+
+## csp并发机制，利用channel做协程间异步通讯
+
+Communicating sequential processes
+
+![Channel模型](/images/channel.png)
+
+```go
+func service() string {
+	time.Sleep(time.Microsecond * 50)
+	return "Done"
+}
+
+func otherTask() {
+	fmt.Println("working on something else")
+	time.Sleep(time.Microsecond * 100)
+	fmt.Println("Task is done.")
+}
+
+func asyncService() chan string	{
+	//创建1个buffer的channel。这样retCh <- ret时，不用阻塞等待别的协程取走数据后再往下执行代码
+	retCh := make(chan string,1) 
+	go func() {
+		ret := service()
+		fmt.Println("returned result.")
+		retCh <- ret
+		fmt.Println("service exited")
+	}()
+	return retCh
+}
+
+func TestAsynService(t *testing.T) {
+	retCh := asyncService()
+	otherTask()
+	fmt.Println(<-retCh)
+}
+```
+
+详情请见:src/ch18/csp/async_service_test.go
