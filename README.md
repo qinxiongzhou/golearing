@@ -285,8 +285,22 @@ func isCancelled(ctx context.Context) bool {
 }
 ```
 
+## singleton 单例模式
 
+```go
+type Singleton struct {
+}
+var singleInstance *Singleton
+var once sync.Once
 
+func GetSingletonObj() *Singleton {
+	once.Do(func() {
+		fmt.Println("Create Obj")
+		singleInstance = new(Singleton)
+	})
+	return singleInstance
+}
+```
 
 
 
