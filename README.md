@@ -245,7 +245,7 @@ func isCancelled(cancelCh chan struct{}) bool {
 	}
 }
 ```
-
+详情请见：src/ch20_/calcel_by_close/cancel_test.go
 
 
 
