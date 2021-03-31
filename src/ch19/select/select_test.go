@@ -7,7 +7,7 @@ import (
 )
 
 func service() string {
-	time.Sleep(time.Microsecond * 500)
+	time.Sleep(time.Millisecond * 5000)
 	return "Done"
 }
 
@@ -23,10 +23,12 @@ func asyncService() chan string	{
 }
 
 func TestAsynService(t *testing.T) {
+	// select 阻塞等待，等待的时间由case <-time.After(time.Millisecond * 500)决定，若无，则一直阻塞等待
 	select {
 	case ret:= <-asyncService():
 		t.Log(ret)
-	case <-time.After(time.Millisecond * 50):
+	case <-time.After(time.Millisecond * 500):
 		t.Error("timeout")
 	}
+	fmt.Println("final Done")
 }

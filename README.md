@@ -123,7 +123,7 @@ func TestAsynService(t *testing.T) {
 
 ```go
 func service() string {
-	time.Sleep(time.Microsecond * 500)
+	time.Sleep(time.Millisecond * 5000)
 	return "Done"
 }
 
@@ -139,17 +139,20 @@ func asyncService() chan string	{
 }
 
 func TestAsynService(t *testing.T) {
+	// select 阻塞等待，等待的时间由case <-time.After(time.Millisecond * 500)决定，若无，则一直阻塞等待
 	select {
 	case ret:= <-asyncService():
 		t.Log(ret)
-	case <-time.After(time.Millisecond * 50):
+	case <-time.After(time.Millisecond * 500):
 		t.Error("timeout")
 	}
+	fmt.Println("final Done")
 }
 ```
+
 详情请见:src/ch19/select/select_test.go
 
-## channel的关闭和广播
+## channel的关闭
 
 * 向关闭的channel发送数据，会导致panic
 * v,ok<-ch;ok为bool值，true表示正常接受，false表示通道关闭
@@ -200,7 +203,48 @@ func TestCloseChannel(t *testing.T) {
 ```
 详情请见:src/ch20/channel_close/channel_close_test.go
 
+## channel 广播
+利用channel的close，来向每个groutine广播消息
 
+```go
+func TestCancel(t *testing.T) {
+	cancenChan := make(chan struct{},0)
+	for i := 0; i < 5; i++ {
+		go func(i int,cancelCh chan struct{}) {
+			for  {
+				if isCancelled(cancenChan){
+					break
+				}
+				time.Sleep(time.Microsecond * 5)
+			}
+			fmt.Println(i,"Done")
+		}(i,cancenChan)
+	}
+	/*cancel_1(cancenChan)
+	cancel_1(cancenChan)*/
+	cancel_all(cancenChan)
+	time.Sleep(time.Microsecond * 1000)
+}
+
+//cancel one groutine
+func cancel_1(cancelChan chan struct{}) {
+	cancelChan <- struct{}{}
+}
+
+//cancel all groutine
+func cancel_all(cancelChan chan struct{})  {
+	close(cancelChan)
+}
+
+func isCancelled(cancelCh chan struct{}) bool {
+	select {
+	case <-cancelCh:
+		return true
+	default:
+		return false
+	}
+}
+```
 
 
 
