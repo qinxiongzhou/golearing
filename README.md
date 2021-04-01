@@ -284,6 +284,7 @@ func isCancelled(ctx context.Context) bool {
 	}
 }
 ```
+详情请见：src/ch20_2/cancel_by_context/cancel_by_context_test.go
 
 ## singleton 单例模式
 
@@ -301,9 +302,40 @@ func GetSingletonObj() *Singleton {
 	return singleInstance
 }
 ```
+详情请见：src/ch21/singleton/once_test.go
 
+## 仅需要任意子任务完成即可结束整个任务
 
+工作经常遇到启动多个任务，只要有一个任务完成，即可结束整个任务。
 
+例如：向多个搜索引擎（google、百度等）发起请求，只要有一个完成，即可返回用户
+
+```go
+func runTask(id int) string {
+	time.Sleep(time.Millisecond * 10)
+	return fmt.Sprintf("The result is from %d",id)
+}
+
+func FirstResponse() string {
+	numOfRunner := 10
+	//use buffer channel。do not block goroutine
+	ch := make(chan string,numOfRunner)
+	for i := 0; i < numOfRunner; i++ {
+		go func() {
+			ret := runTask(i)
+			ch <-ret
+		}()
+	}
+	return <-ch
+}
+
+func TestFirstResponse(t *testing.T) {
+	t.Log("Before:",runtime.NumGoroutine())
+	t.Log(FirstResponse())
+	t.Log("After:",runtime.NumGoroutine())
+}
+```
+详情请见：src/ch22/util_anyone_reply/first_response_test.go
 
 
 
