@@ -374,4 +374,66 @@ func TestAllResponse(t *testing.T) {
 
 详情请见：src/ch23/util_all_reply/all_response_test.go
 
+## 对象池
+当对象创建需要消耗大量资源，比如DB连接，可以使用channel，实现对象池来缓存对象
+```go
+
+type ResuableObj struct {
+}
+
+type ObjPool struct {
+	bufChan chan *ResuableObj
+}
+
+func NewObjPool(numOfObj int) *ObjPool {
+	objPool := ObjPool{}
+	objPool.bufChan = make(chan *ResuableObj, numOfObj)
+
+	for i := 0; i < numOfObj; i++ {
+		objPool.bufChan <- &ResuableObj{}
+	}
+	return &objPool
+}
+
+func (p *ObjPool) GetObj(timeout time.Duration) (*ResuableObj, error) {
+	select {
+	case ret := <-p.bufChan:
+		return ret,nil
+	case <-time.After(timeout):
+		return nil,errors.New("time out")
+	}
+}
+
+func (p *ObjPool) ReleaseObj(obj *ResuableObj) error {
+	select {
+	case p.bufChan <- obj:
+		return nil
+	default:
+		return errors.New("overflow")
+
+	}
+}
+```
+```go
+func TestObjPool(t *testing.T) {
+	pool := obj_pool.NewObjPool(10)
+
+	for i := 0; i < 12; i++ {
+		if v,err := pool.GetObj(time.Second * 1);err != nil{
+			t.Error(err)
+		}else {
+			fmt.Printf("%T\n",v)
+			if err := pool.ReleaseObj(v);err != nil{
+				t.Error(err)
+			}
+		}
+	}
+
+}
+
+```
+详情请见：
+src/ch32/obj_pool/obj_pool.go
+src/ch32/obj_pool/obj_pool_test.go
+
 
