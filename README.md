@@ -436,4 +436,33 @@ func TestObjPool(t *testing.T) {
 src/ch32/obj_pool/obj_pool.go
 src/ch32/obj_pool/obj_pool_test.go
 
+## sync.pool 对象缓存
 
+![sync.Pool](/images/syncPool.png)
+
+**获取**
+* 尝试从私有对象获取
+* 私有对象不存在，尝试从当前Processor的共享池获取
+* 如果当前Processor共享池也是空的，那么就尝试去其他Processor的共享池获取
+* 如果所有子池都是空的，最后就用用户指定的New函数产生一个新的对象返回
+
+**放回**
+* 如果私有对象不存在则保存为私有对象
+* 如果私有对象存在，放入当前Processor子池的共享池中
+
+```go
+func TestSyncPool(t *testing.T) {
+	pool := &sync.Pool{New: func() interface{} {
+		fmt.Println("create a new object.")
+		return 100
+	}}
+	v := pool.Get().(int)
+	fmt.Println(v)
+	pool.Put(3)
+	//runtime.GC()//GC 会清楚sync。pool中缓存的对象
+	v1,_ := pool.Get().(int)
+	fmt.Println(v1)
+}
+```
+
+详情请见：src/ch33/obj_cache/sync_pool_test.go
