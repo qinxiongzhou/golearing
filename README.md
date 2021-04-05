@@ -338,5 +338,40 @@ func TestFirstResponse(t *testing.T) {
 详情请见：src/ch22/util_anyone_reply/first_response_test.go
 
 
+## 所有子任务完成才可结束整个任务
+
+可以使用sync.waitGroup来实现，这里用csp来实现
+```go
+func runTask(id int) string {
+	time.Sleep(time.Millisecond * 10)
+	return fmt.Sprintf("The result is from %d", id)
+}
+
+func AllResponse() string {
+	numOfRunner := 10
+	//use buffer channel。do not block goroutine
+	ch := make(chan string, numOfRunner)
+	for i := 0; i < numOfRunner; i++ {
+		go func() {
+			ret := runTask(i)
+			ch <- ret
+		}()
+	}
+
+	resultSet := ""
+	for i := 0; i < numOfRunner; i++ {
+		resultSet += <-ch + "\n"
+	}
+	return resultSet
+}
+
+func TestAllResponse(t *testing.T) {
+	t.Log("Before:", runtime.NumGoroutine())
+	t.Log(AllResponse())
+	t.Log("After:", runtime.NumGoroutine())
+}
+```
+
+详情请见：src/ch23/util_all_reply/all_response_test.go
 
 
