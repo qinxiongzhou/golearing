@@ -2,6 +2,8 @@
 Go 语言学习的测试案例，从入门开始
 实实在在操一边，才能真正掌握。
 
+# 并发篇
+
 ## Thread vs. Groutine 协程
 
 1. 创建时默认的stack的大小
@@ -467,7 +469,9 @@ func TestSyncPool(t *testing.T) {
 
 详情请见：src/ch33/obj_cache/sync_pool_test.go
 
-## 测试
+# 测试
+
+## 基本测试
 package "testing"，多个go文件都可以使用这个package，文件间的方法可以相互调用
 
 **内置单元测试框架**
@@ -527,3 +531,5 @@ func TestSquareWithAssert(t *testing.T) {
 	}
 }
 ```
+
+## Benchmark
