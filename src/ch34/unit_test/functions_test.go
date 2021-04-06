@@ -1,6 +1,10 @@
-package myunit_test
+package testing
 
-import "testing"
+import (
+	"fmt"
+	"github.com/stretchr/testify/assert"
+	"testing"
+)
 
 func TestSquare(t *testing.T) {
 	inputs := [...]int{1,2,3}
@@ -14,6 +18,23 @@ func TestSquare(t *testing.T) {
 	}
 }
 
-func square(op int) int {
-	return op * op
+func TestErrorInCode(t *testing.T) {
+	fmt.Println("start")
+	t.Error("error")
+	fmt.Println("end")
+}
+
+func TestFatalInCode(t *testing.T) {
+	fmt.Println("start")
+	t.Fatal("error")
+	fmt.Println("end")
+}
+
+func TestSquareWithAssert(t *testing.T) {
+	inputs := [...]int{1,2,3}
+	expected := [...]int{1,4,9}
+	for i:=0;i< len(inputs);i++ {
+		ret := square(inputs[i])
+		assert.Equal(t, expected[i],ret)
+	}
 }

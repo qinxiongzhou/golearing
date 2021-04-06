@@ -466,3 +466,64 @@ func TestSyncPool(t *testing.T) {
 ```
 
 详情请见：src/ch33/obj_cache/sync_pool_test.go
+
+## 测试
+package "testing"，多个go文件都可以使用这个package，文件间的方法可以相互调用
+
+**内置单元测试框架**
+
+- Fail，Error：该测试失败，该测试继续，其他测试继续执行
+- FailNow，Fatal：该测试失败，该测试终止，其他测试继续执行
+
+```go
+func TestErrorInCode(t *testing.T) {
+	fmt.Println("start")
+	t.Error("error")
+	fmt.Println("end")
+}
+
+func TestFatalInCode(t *testing.T) {
+	fmt.Println("start")
+	t.Fatal("error")
+	fmt.Println("end")
+}
+
+//结果
+=== RUN   TestErrorInCode
+start
+functions_test.go:23: error
+end
+--- FAIL: TestErrorInCode (0.00s)
+=== RUN   TestFatalInCode
+start
+functions_test.go:29: error
+--- FAIL: TestFatalInCode (0.00s)
+```
+
+- 代码覆盖率
+
+```shell
+go test -v -cover
+##结果
+coverage: 100.0% of statements
+```
+
+- 断言
+  
+https://github.com/stretchr/testify
+
+安装
+```shell
+go get -u github.com/stretchr/testify/assert
+```
+使用
+```go
+func TestSquareWithAssert(t *testing.T) {
+	inputs := [...]int{1,2,3}
+	expected := [...]int{1,4,9}
+	for i:=0;i< len(inputs);i++ {
+		ret := square(inputs[i])
+		assert.Equal(t, expected[i],ret)
+	}
+}
+```
