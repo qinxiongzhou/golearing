@@ -531,5 +531,37 @@ func TestSquareWithAssert(t *testing.T) {
 	}
 }
 ```
+详情请见：src/ch34/unit_test/functions_test.go
 
 ## Benchmark
+
+**基本结构**
+```go
+func BenchmarkName(b *testing.B) {
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+	}
+	b.StopTimer()
+}
+```
+
+**执行命令**
+```shell
+go test -bench=. -benchmem -count=1
+```
+- -bench=<相关benchmark测试>。Windows下使用go test命令行时，-bench=. 应该写成-bench="."
+- -benchmem性能测试的时候显示测试函数的内存分配大小，内存分配次数的统计信息
+- -count n,运行测试和性能多少此，默认一次
+
+**测试结果**
+```shell
+BenchmarkConcatStringByAdd-4             6087056               192.7 ns/op            16 B/op          4 allocs/op
+BenchmarkConcatStringByBytesBuffer-4    10425752               117.0 ns/op            64 B/op          1 allocs/op
+```
+- BenchmarkConcatStringByAdd-4 表示测试的函数名，-4表示GOMAXPROCS(线程数)的值为4
+- 6087056 表示一共执行了6087056次，即b.N的值
+- 192.7 ns/op 表示平均每次操作花费了192.7纳秒
+- 16 B/op 表示每次操作申请了16Byte的内存申请
+- 4 allocs/op 表示每次操作申请了4次内存
+
+详情请见：src/ch35/benchmark/concat_string_test.go
