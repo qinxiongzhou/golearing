@@ -553,6 +553,11 @@ go test -bench=. -benchmem -count=1
 - -benchmem性能测试的时候显示测试函数的内存分配大小，内存分配次数的统计信息
 - -count n,运行测试和性能多少此，默认一次
 
+```shell
+# 查看相关参数细节
+go help testflag
+```
+
 **测试结果**
 ```shell
 BenchmarkConcatStringByAdd-4             6087056               192.7 ns/op            16 B/op          4 allocs/op

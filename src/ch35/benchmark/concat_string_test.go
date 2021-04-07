@@ -38,15 +38,4 @@ func BenchmarkConcatStringByAdd(b *testing.B) {
 	b.StopTimer()
 }
 
-func BenchmarkConcatStringByBytesBuffer(b *testing.B) {
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		var buf bytes.Buffer
-		elems := []string{"1","2","3","4","5"}
-		for _,elem := range elems {
-			buf.WriteString(elem)
-		}
-		buf.String()
-	}
-	b.StopTimer()
-}
+
