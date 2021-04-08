@@ -570,3 +570,19 @@ BenchmarkConcatStringByBytesBuffer-4    10425752               117.0 ns/op      
 - 4 allocs/op 表示每次操作申请了4次内存
 
 详情请见：src/ch35/benchmark/concat_string_test.go
+
+## BDD Behavior Driven Development
+行为驱动开发
+
+**项目网站**
+
+https://github.com/smartystreets/goconvey
+
+**安装**
+
+```shell
+go get -u github.com/smartystreets/goconvey/convey
+```
+
+详情请见：src/ch36/bdd/bdd_spec_test.go
+

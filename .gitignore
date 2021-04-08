@@ -1,2 +1,4 @@
 /src/ch1/main/*.exe
 /.idea
+/pkg
+/src/github.com/*
