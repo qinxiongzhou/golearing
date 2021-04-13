@@ -730,3 +730,5 @@ func TestAtomic(t *testing.T) {
 	wg.Wait()
 }
 ```
+
+详情请见：src/ch39/unsafe_pragramming/unsafe_test.go
