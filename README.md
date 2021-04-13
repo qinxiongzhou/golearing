@@ -660,7 +660,7 @@ func TestInvokeByName(t *testing.T) {
 
 ```
 
-## reflect.DeepEqual
+  ## reflect.DeepEqual
 对象深入比较
 
 ```go
@@ -676,5 +676,57 @@ func TestDeepEqual(t *testing.T) {
 	s3 := []int{2, 3, 1}
 	t.Log("s1 == s2?",reflect.DeepEqual(s1,s2))
 	t.Log("s2 == s3?",reflect.DeepEqual(s2,s3))
+}
+```
+详情请见：src/ch38/flexible_reflect_test.go
+
+## 不安全编程
+
+```go
+type MyInt int
+//类型别名，可以使用
+func TestConvert(t *testing.T) {
+	a := []int{1, 2, 3, 4}
+	b := *(*[]MyInt)(unsafe.Pointer(&a))
+	t.Log(b)
+}
+```
+**并发读写共享缓存，达到读和写的安全性。写的时候是块新的内存，写完成后，把读的指针通过atomic。StorePointer的原子操作重新指向一下**
+```go
+
+func TestAtomic(t *testing.T) {
+	var shareBufPtr unsafe.Pointer
+	writeDataFn := func() {
+		data := []int{}
+		for i := 0; i < 100; i++ {
+			data = append(data,i)
+		}
+		atomic.StorePointer(&shareBufPtr,unsafe.Pointer(&data))
+	}
+	readDataFn := func() {
+		data := atomic.LoadPointer(&shareBufPtr)
+		fmt.Println(data,*(*[]int)(data))
+	}
+	var wg sync.WaitGroup
+	writeDataFn()
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func() {
+			for j := 0; j < 10; j++ {
+				writeDataFn()
+				time.Sleep(time.Microsecond * 100)
+			}
+			wg.Done()
+		}()
+		wg.Add(1)
+		go func() {
+			for j := 0; j < 10; j++ {
+				readDataFn()
+				time.Sleep(time.Microsecond * 100)
+			}
+			wg.Done()
+		}()
+	}
+	wg.Wait()
 }
 ```
