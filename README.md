@@ -266,7 +266,9 @@ t.Log(arr3_sec) //[1 3 4]
 ```
 参考代码：[array_test](/src/ch6/array/array_test.go)
 
-## 1.11 切片内部结构 slice
+## 1.11 切片
+
+**基本介绍**
 
 切片：动态数组
 
@@ -293,7 +295,583 @@ func TestSliceInit(t *testing.T) {
    t.Log(len(s2), cap(s2))
 }
 ```
+
+**共享储存结构**
+
+![slice_share_mem.png](/images/slice_share_mem.png)
+
+```go
+func TestSliceShareMemory(t *testing.T) {
+   year := []string{"Jan","Feb","Mar","Apr","May","Jun","Jul",
+      "Aug","Sep","Oct","Nov","Dec"}
+   q2 := year[3:6]
+   t.Log(q2,len(q2),cap(q2)) //[Apr May Jun] 3 9
+
+   sumer := year[5:8]
+   t.Log(sumer,len(sumer),cap(sumer)) //[Jun Jul Aug] 3 7
+
+   sumer[0] = "Unknow"
+   t.Log(q2) //[Apr May Unknow]
+   t.Log(year) //[Jan Feb Mar Apr May Unknow Jul Aug Sep Oct Nov Dec]
+
+}
+```
 参考代码：[slice_test](/src/ch6/slice/slice_test.go)
+
+## 1.13 数组 VS 切片
+* 1、容量是否可伸缩
+  - 数组不行，切片可以
+* 2、是否可以进行比较
+  - 数组可以，切片不行
+  
+## 1.14 map
+**init**
+```go
+func TestName(t *testing.T) {
+   m1 := map[int]int{1: 1, 2: 4, 3: 6}
+   t.Log(m1[2]) //4
+   t.Logf("len m1=%d", len(m1)) //len m1=3
+   m2 := map[int]int{}
+   t.Logf("len m2=%d", len(m2))//len m2=0
+   m3 := make(map[int]int, 10) //用make创建map结构，10指cap，不是len
+   t.Logf("len m3=%d", len(m3))//len m3=0
+}
+```
+**access Not Exist string key**
+```go
+func TestAccessNotExiststringKey(t *testing.T) {
+   m1 := map[int]int{}
+   t.Log(m1[1])
+   m1[2] = 0
+   t.Log(m1[2])
+
+   //value 不存在，返回值也是0，用如下方式区分值为0还是不存在
+   if v,ok := m1[3]; ok {
+      t.Logf("Key 3 value is %d" ,v)
+   }else {
+      t.Logf("key 3 is not existing")
+   }
+
+   m1[3] = 0
+   //value 不存在，返回值也是0，用如下方式区分值为0还是不存在
+   if v,ok := m1[3]; ok {
+      t.Logf("Key 3 value is %d" ,v)
+   }else {
+      t.Logf("key 3 is not existing")
+   }
+}
+```
+**travel map  遍历map**
+```go
+func TestTravelMap(t *testing.T) {
+   m1 := map[int]int{1: 1, 2: 4, 3: 6}
+   for k, v := range m1 {
+      t.Log(k, v)
+   }
+}
+```
+**value is a function，map的值是一个方法**
+```go
+func TestMapWithFuncValue(t *testing.T) {
+   //map value is a function
+   m := map[int]func(op int) int{}
+   m[1] = func(op int) int {
+      return op
+   }
+   m[2] = func(op int) int {
+      return op * op
+   }
+   m[3] = func(op int) int {
+      return op * op * op
+   }
+   t.Log(m[1](2), m[2](2), m[3](2))
+
+}
+```
+参考代码：[mapext_test](/src/ch8/map/mapext_test.go)
+
+
+## 1.15 set
+
+Go 的内置集合中没有Set的实现，可以map[type]bool
+* 1、元素的唯一性
+* 2、基本操作
+  - 添加元素
+  - 判断元素是否存在
+  - 删除元素
+  - 元素个数
+
+```go
+func TestMapForSet(t *testing.T) {
+   mySet := map[string]bool{}
+   mySet["Go"]=true
+   key := "Go"
+
+   if mySet[key]{
+      t.Log(key+" is exist")
+   }else {
+      t.Log(key + " is not exist")
+   }
+}
+```
+参考代码：[mapext_test](/src/ch8/map/mapext_test.go)
+
+## 1.16 函数
+* 1、可以有多个返回值
+* 2、所有参数都是值传递：slice、map、channel会有传引用的错觉
+* 3、函数可以作为变量的值
+* 4、函数可以作为参数和返回值
+
+```go
+// 方法作为参数传递
+func timeSpent(myInner func(op int) int) func(op int) int {
+   return func(n int) int {
+      start :=time.Now()
+      ret :=myInner(n)
+      fmt.Println("time spent:",time.Since(start).Seconds())
+      return  ret
+   }
+}
+
+func slowFun(op int) int {
+   time.Sleep(time.Second*1)
+   fmt.Println("slowFun")
+   return op
+}
+
+func TestFn02(t *testing.T) {
+   a,_ :=returnMultiValues()
+   t.Log(a)
+   tsSF := timeSpent(slowFun)
+   t.Log(tsSF(10))
+}
+```
+参考代码：[func_test](/src/ch10/func/func_test.go)
+
+**可变参数**
+```go
+func sum(ops ...int) int {
+   ret := 0
+   for _, op := range ops {
+      ret += op
+   }
+   return ret
+}
+
+func TestVarParam(t *testing.T) {
+   t.Log(sum(1,2,3,5))
+   t.Log(sum(1,5,3,12))
+}
+```
+参考代码：[funcVarParam_test](/src/ch10/func/funcVarParam_test.go)
+
+## 1.17 defer函数
+被调用的方法延迟执行，一般在方法推出之前执行，可用于做资源释放
+
+```go
+func clear()  {
+   fmt.Println("Clear resources")
+}
+
+func TestDefer(t *testing.T) {
+   defer clear()
+   fmt.Println("Start")
+   panic("Fatal error") //defer仍会执行
+}
+```
+参考代码：[funcDefer_test](/src/ch10/func/funcDefer_test.go)
+
+## 1.18 结构体
+
+**定义**
+
+```go
+type Employee struct {
+   Id string
+   Name string
+   Age int
+}
+
+func TestCreateEmployeeObj(t *testing.T) {
+   e := Employee{"0", "Bob", 20}
+   e1 := Employee{
+      Name: "Mike",
+      Age:  30,
+   }
+   e2 := new(Employee)
+   e2.Id = "2"
+   e2.Age = 22
+   e2.Name = "Rose"
+
+   t.Log(e)
+   t.Log(e1)
+   t.Log(e1.Id)
+   t.Log(e2)
+   t.Logf("e is %T",e) //e is encapsulation.Employee
+   t.Logf("e2 is %T",e2) //e2 is *encapsulation.Employee
+}
+```
+
+**行为（方法）定义**
+```go
+type Employeee struct {
+   Id string
+   Name string
+   Age int
+}
+//第一种定义方式在实例对应方法被调用是，实例的成员会进行值复制
+//func (e Employeee) String() string {
+// //Address is c0000745b0
+// //Address is c0000745e0
+// fmt.Printf("Address is %x \n",unsafe.Pointer(&e.Name))
+// return fmt.Sprintf("ID:%s-Name:%s-Age:%d",e.Id,e.Name,e.Age)
+//}
+
+//通常情况下为了避免内存拷贝我们使用第二种定义方式
+func (e *Employeee) String() string {
+   //Address is c0000745b0
+   //Address is c0000745b0
+   fmt.Printf("Address is %x \n",unsafe.Pointer(&e.Name))
+   return fmt.Sprintf("ID:%s-Name:%s-Age:%d",e.Id,e.Name,e.Age)
+}
+
+func TestStructOperations(t *testing.T) {
+   e := Employeee{"0", "Bob", 20}
+   fmt.Printf("Address is %x \n",unsafe.Pointer(&e.Name))
+   t.Log(e.String())
+}
+```
+参考代码：[struct_operation_test](/src/ch11/encapsulation/struct_operation_test.go)
+
+## 1.19 接口与依赖
+Java的接口定义
+
+![interface_java](/images/interface_java.png)
+
+Go的接口定义
+
+![interface_go](/images/interface_go.png)
+
+```go
+import "testing"
+
+type Programmer interface {
+   WriteHelloWorld() string
+}
+
+type GoProgrammer struct {
+
+}
+
+func (g *GoProgrammer) WriteHelloWorld() string  {
+   return "fmt.Println(\"Hello World\")"
+}
+
+func TestClient(t *testing.T) {
+   var p Programmer
+   p = new(GoProgrammer)
+   t.Log(p.WriteHelloWorld())
+}
+```
+与其他主要编程语言的差异
+* 1、接口为非入侵性，实现不依赖于接口定义
+* 2、所以接口的定义可以包含在接口使用者包内
+
+参考代码：[interface_test](/src/ch11/interface/interface_test.go)
+
+**接口变量**
+
+![interface_val](/images/interface_val.png)
+
+## 1.20 自定义类型
+```go
+type IntConv func(op int) int
+type MyPoint int
+```
+
+## 1.21 继承（扩展和复用）
+能继承，但不能重写方法
+
+```go
+type Pet struct {
+}
+
+func (p *Pet) Speak() {
+   fmt.Print("Pet Speak")
+}
+
+func (p *Pet) SpeakTo(host string) {
+   p.Speak()
+   fmt.Println("Pet SpeakTo ", host)
+}
+
+type Dog struct {
+   Pet
+}
+
+func (d *Dog) SpeakTo(host string) {
+   fmt.Println("Dog SpeakTo", host)
+}
+
+func TestDog(t *testing.T) {
+   dog := new(Dog)
+   dog.Pet.SpeakTo("Hello World!")
+   dog.SpeakTo("Hello World!")
+}
+```
+参考代码：[extension_test](/src/ch12/extension/extension_test.go)
+
+## 1.22 多态
+利用接口进行多态设计
+```go
+type Code string
+type Programmer interface {
+   WriteHelloWorld() Code
+}
+
+type GoProgrammer struct {
+
+}
+
+func (g *GoProgrammer)WriteHelloWorld() Code {
+   return "fmt.Println(\"Go Programmer say : Hello World!\")"
+}
+
+type JavaProgrammer struct {
+
+}
+
+func (java * JavaProgrammer)WriteHelloWorld() Code {
+   return "fmt.Println(\"Java Programmer say : Hello World!\")"
+}
+
+func TestPolymorphism(t *testing.T) {
+   var p1 Programmer = new(GoProgrammer)
+   var p2 Programmer = new(JavaProgrammer)
+   p1.WriteHelloWorld()
+   p2.WriteHelloWorld()
+}
+```
+参考代码：[polymorphism_test](/src/ch13/polymorphism/polymorphism_test.go)
+
+## 1.23 空接口与断言
+* 1、空接口可以表示任何类型
+* 2、通过断言来将空接口转换为指定类型
+  - v,ok:=p.(int)
+```go
+func DoSomething(p interface{})  {
+   if i,ok:=p.(int);ok {
+      fmt.Println("Integer",i)
+      return
+   }
+   if i,ok:=p.(string);ok {
+      fmt.Println("string",i)
+      return
+   }
+   fmt.Println("Unknow Type")
+/*
+   switch v:=p.(type) {
+   case int:
+      fmt.Println("Integer",v)
+   case string:
+      fmt.Println("string",v)
+   default:
+      fmt.Println("Unknow Type")
+   }*/
+}
+
+func TestEmptyInterfaceAssertion(t *testing.T) {
+   DoSomething(10)
+   DoSomething("10")
+}
+```
+参考代码：[empty_interface_test](/src/ch13/empty_interface/empty_interface_test.go)
+
+## 1.24 Go的错误机制
+* 1、没有异常机制
+* 2、error类型实现了error接口
+* 3、可以通过errors.New来快速创建错误实例
+```go
+var LessThanTwoError = errors.New("n should be not less than 2")
+var LargerThanHundredError = errors.New("n should be not larger than 1000")
+
+func GetFibonacci(n int) ([]int, error) {
+   if n < 2 {
+      return nil,LessThanTwoError
+   }
+   if n > 100 {
+      return nil,LargerThanHundredError
+   }
+   fibList := []int{1,1}
+   for i := 2;i < n; i++ {
+      fibList = append(fibList,fibList[i-2]+fibList[i-1])
+   }
+   return fibList,nil
+}
+
+func TestGetFibonacci(t *testing.T) {
+   if v,err := GetFibonacci(1); err != nil {
+      t.Error(err)
+   } else {
+      t.Log(v)
+   }
+}
+```
+参考代码：[error_test](/src/ch14/error/error_test.go)
+
+## 1.25 panic和os.Exit 退出程序，recover恢复
+* panic用于不可以恢复的错误
+* panic退出前会执行defer指定的内容
+
+**panic vs os.Exit**
+
+* os.Exit退出时不会调用defer指定的函数
+* os.Exi退出时不输出当前调用栈信息
+
+**recover**
+
+* 用于捕捉panic抛出的异常，做恢复错误
+
+```go
+func TestPanicVxExit(t *testing.T) {
+
+   defer func() {
+      if err := recover(); err != nil {
+         fmt.Println("recovered from ", err)
+      }
+   }()
+
+   fmt.Println("start")
+   panic(errors.New("Something wrong!"))
+   //os.Exit(-1)
+}
+```
+参考代码：[panic_recover_test](/src/ch14/panic_recover/panic_recover_test.go)
+
+## 1.26 package
+* 1、基本服用模块单元
+  - 以首字母大写来表明可被包外代码访问
+* 2、代码的package可以和所在的目录不一致
+* 3、同一目录里的Go代码的package要保持一致
+* 4、通过go get 来获取远程依赖
+  - go get -u强制从网络更新远程依赖
+* 5、注意代码在GitHub上的组织形式，以适应go get
+  - 直接以代码路径开始，不要有src，自己放package给别人用时，特别注意
+```go
+package series
+
+func GetFibonacciSerie(n int) []int {
+   ret := []int{1, 1}
+   for i := 2; i < n; i++ {
+      ret = append(ret, ret[i-2]+ret[i-1])
+   }
+   return ret
+}
+```
+```go
+package client
+
+import (
+   "ch15/series"
+   "testing"
+)
+
+func TestPackage(t *testing.T) {
+   t.Log(series.GetFibonacciSerie(10))
+}
+```
+参考代码：[my_series](/src/ch15/series/my_series.go)
+
+参考代码：[package_test](/src/ch15/client/package_test.go)
+
+**如果要引用自己写的package，需要工程的路径写到GOPATH的环境变量中**
+
+如果是idea IDE，可以如下设置：
+
+![gopath_ide](/images/gopath_ide.png)
+
+## 1.27 init方法
+* 在main被执行前，所有依赖的package的init方法都会被执行
+* 不同包的init函数按照包导入的依赖关系决定执行顺序
+* 每个包可以有多个init方法
+* 包的每个源文件也可以有多个init函数，这点比较特殊
+
+```go
+func init() {
+   fmt.Println("init1")
+}
+
+func init() {
+   fmt.Println("init2")
+}
+
+func Square(n int) int {
+   return n ^ 2
+}
+```
+参考代码：[my_series](/src/ch15/series/my_series.go)
+
+## 1.28 获取远程package
+我的GOPATH=C:\Users\Ryan\go;D:\workspace\golearing
+
+idea上导入：
+go get -t github.com/easierway/concurrent_map
+
+![package_get_from_remote](/images/package_get_from_remote.png)
+
+下载的文件存在在如下目录
+
+![package_local](/images/package_local.png)
+
+```go
+package remote
+
+import (
+   "github.com/easierway/concurrent_map"
+   "testing"
+)
+func TestConcurrentMap(t *testing.T) {
+   m := concurrent_map.CreateConcurrentMap(10)
+   m.Set(concurrent_map.StrKey("key"),10)
+   t.Log(m.Get(concurrent_map.StrKey("key")))
+}
+```
+参考代码：[remote_package_test](/src/ch15/remote_package/remote_package_test.go)
+
+## 1.29 vendor路径，包管理工具dep
+
+* 1、当前包下的vendor目录
+* 2、向上级目录查找，直到找到src下的vendor目录
+* 3、在GOPATH下面查找依赖包
+* 4、在GOROOT目录下查找
+
+1、下载最新的windows的exe包
+
+dep工具：https://github.com/golang/dep/releases
+
+![dep_1](/images/dep_1.png)
+
+2、放到GO的bin路径中，并改名为dep.exe
+
+![dep_2](/images/dep_2.png)
+
+3、在idea的setting中设置dep
+
+![dep_3](/images/dep_3.png)
+
+4、dep的使用，进入到代码所在的文件夹中，例如：
+ch15/remote_package
+```go
+#dep初始化，初始化配置文件Gopkg.toml
+dep init
+#dep加载依赖包，自动归档到vendor目录
+dep ensure
+# 最终会生成vendor目录，Gopkg.toml和Gopkg.lock的文件
+```
+
+5、工程目录如下图
+![dep_5](/images/dep_5.png)
+
 
 # 2 并发
 
@@ -724,6 +1302,7 @@ func TestObjPool(t *testing.T) {
 
 ```
 参考代码：[obj_pool](/src/ch32/obj_pool/obj_pool.go)
+
 参考代码：[obj_pool_test](/src/ch32/obj_pool/obj_pool_test.go)
 
 ## 2.13 sync.pool 对象缓存
