@@ -75,8 +75,119 @@ total 1892
 [root@worker ~]# ./hello 
 Hello World
 ```
-
 ![build_linux_1.png](/images/build_linux_1.png)
+
+## 1.4 基本数据类型
+类型 |
+---- |
+bool |
+string|
+int  int8  int16  int32  int64|
+unit  unit8  unit16  unit32  unit64|
+byte //alias for unit8|
+rune // alias for int32,represent a Unicode code point|
+float32  float64|
+complex64  complex102|
+
+## 1.5 类型转换
+* 1、Go语言不允许隐式类型转换
+* 2、别名和原有类型也不能进行隐式类型转换
+
+```go
+package type_test
+import "testing"
+type MyInt int64
+func TestImplicit(t *testing.T) {
+   var a int = 1
+   var b int64
+   //b = a //Cannot use 'a' (type int) as type int64
+   b = int64(a)
+
+   var c MyInt
+   //c = b //Cannot use 'b' (type int64) as type MyInt
+   c = MyInt(b)
+   
+   t.Log(a,b,c)
+}
+```
+
+详情请见：src/ch3/type_test/type_test.go
+
+## 1.6 指针类型
+* 1、不支持指针运算（有很多C++程序员会用到指针，然后访问后续空间。这种操作是不支持的）
+* 2、string是值类型，其默认的初始化值为空字符串，而不是nil
+
+```go
+func TestPoint(t *testing.T) {
+   a := 1
+   aPrt := &a
+   //aPrt = aPrt +1 //Invalid operation: aPrt +1 (mismatched types *int and untyped int)
+   t.Log(a,aPrt)
+   t.Log("%T %T",a,aPrt)
+}
+```
+
+```go
+func TestString(t *testing.T) {
+   var s string
+   t.Log("*" + s + "*")
+   t.Log(len(s))
+
+   if s == "" { //注意这里是“”，而不是nil
+
+   }
+}
+```
+
+详情请见：src/ch3/type_test/type_test.go
+
+## 1.7 用==比较数组
+* 1、相同维数且含有相同个数元素的数组才可以比较
+* 2、每个元素都相同的才相等
+
+```go
+func TestCompareArray(t *testing.T) {
+   a := [...]int{1,2,3,4}
+   b := [...]int{1,2,3,5}
+   //c := [...]int{1,2,3,4,5} //c declared but not used
+   d := [...]int{1,2,3,4}
+
+   t.Log(a == b)
+   //t.Log(a == c) //Invalid operation: a == c (mismatched types [4]int and [5]int)
+   //t.Log(a == d) //Invalid operation: a == c (mismatched types [4]int and [5]int)
+   t.Log(a == d)
+}
+```
+
+详情请见：src/ch4/operator_test/operator_test.go
+
+## 1.8 位运算符
+* &^ 按位置零（自称：右1零）
+* 右边运算值为0，则结果==左边值
+* 右边运算值为1，则结果==0
+
+```go
+1 &^ 0 --1
+1 &^ 1 --0
+0 &^ 0 --0
+0 &^ 1 --0
+```
+
+```go
+const (
+   Readable = 1 << iota
+   Writable
+   Executable
+)
+
+func TestBitClear(t *testing.T) {
+   a := 7 //0111
+   a = a &^ Readable
+   t.Log(a&Readable == Readable, a&Writable == Writable, a&Executable == Executable)
+}
+```
+
+详情请见：src/ch4/operator_test/operator_test.go
 
 # 2 并发
 
