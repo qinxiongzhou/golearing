@@ -821,7 +821,7 @@ go get -t github.com/easierway/concurrent_map
 
 下载的文件存在在如下目录
 
-![package_local](/images/package_local.png)
+![package_localstore](/images/package_localstore.png)
 
 ```go
 package remote
