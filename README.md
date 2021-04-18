@@ -1,14 +1,14 @@
 # golearing
 Go 语言学习的测试案例，从入门开始
 实实在在操一边，才能真正掌握。
-# 基础
+# 1 基础
 
 ## 安装
 
 
-# 并发
+# 2 并发
 
-## Thread vs. Groutine 协程
+## 2.1 Thread vs. Groutine 协程
 
 1. 创建时默认的stack的大小
 * JDK5以后Java Thread stack默认为1M
@@ -31,7 +31,7 @@ for i := 0; i < 10; i++ {
 ```
 详情请见:src/ch16/groutine/groutine_test.go
 
-## Mutex RWMutex 锁
+## 2.2 Mutex RWMutex 锁
 * 在一个 goroutine 获得 Mutex 后，其他 goroutine 只能等到这个 goroutine 释放该 Mutex
 * 使用 Lock() 加锁后，不能再继续对其加锁，直到利用 Unlock() 解锁后才能再加锁
 * 在 Lock() 之前使用 Unlock() 会导致 panic 异常。
@@ -59,7 +59,7 @@ func TestCounterWaitGroup(t *testing.T) {
 ```
 详情请见:src/ch17/share_mem/share_mem_test.go
 
-## WaitGroup 等待组
+## 2.3 WaitGroup 等待组
 主线程为了等待goroutine都运行完毕，不得不在程序的末尾使用time.Sleep() 来睡眠一段时间，等待其他线程充分运行。对于简单的代码，100个for循环可以在1秒之内运行完毕，time.Sleep() 也可以达到想要的效果。
 
 但是对于实际生活的大多数场景来说，1秒是不够的，并且大部分时候我们都无法预知for循环内代码运行时间的长短。这时候就不能使用time.Sleep() 来完成等待操作了。WaitGroup就可以登上舞台了。
@@ -84,7 +84,7 @@ func TestCounterWaitGroup(t *testing.T) {
 ```
 详情请见:src/ch17/share_mem/share_mem_test.go
 
-## csp并发机制，利用channel做协程间异步通讯
+## 2.4 csp并发机制，利用channel做协程间异步通讯
 
 Communicating sequential processes
 
@@ -123,7 +123,7 @@ func TestAsynService(t *testing.T) {
 
 详情请见:src/ch18/csp/async_service_test.go
 
-## select 多路选择和超时
+## 2.5 select 多路选择和超时
 
 ![select多路选择和超时](/images/select.png)
 
@@ -158,7 +158,7 @@ func TestAsynService(t *testing.T) {
 
 详情请见:src/ch19/select/select_test.go
 
-## channel的关闭
+## 2.6 channel的关闭
 
 * 向关闭的channel发送数据，会导致panic
 * v,ok<-ch;ok为bool值，true表示正常接受，false表示通道关闭
@@ -209,7 +209,7 @@ func TestCloseChannel(t *testing.T) {
 ```
 详情请见:src/ch20/channel_close/channel_close_test.go
 
-## channel 广播
+## 2.7 channel 广播
 利用channel的close，来向每个groutine广播消息
 
 ```go
@@ -253,7 +253,7 @@ func isCancelled(cancelCh chan struct{}) bool {
 ```
 详情请见：src/ch20_/calcel_by_close/cancel_test.go
 
-## Context
+## 2.8 Context
 
 * 根Context：通过context.Backgroud()创建
 * 子Context：context.WithCancel(parentContext)创建
@@ -292,7 +292,7 @@ func isCancelled(ctx context.Context) bool {
 ```
 详情请见：src/ch20_2/cancel_by_context/cancel_by_context_test.go
 
-## singleton 单例模式
+## 2.9 singleton 单例模式
 
 ```go
 type Singleton struct {
@@ -310,7 +310,7 @@ func GetSingletonObj() *Singleton {
 ```
 详情请见：src/ch21/singleton/once_test.go
 
-## 仅需要任意子任务完成即可结束整个任务
+## 2.10 仅需要任意子任务完成即可结束整个任务
 
 工作经常遇到启动多个任务，只要有一个任务完成，即可结束整个任务。
 
@@ -344,7 +344,7 @@ func TestFirstResponse(t *testing.T) {
 详情请见：src/ch22/util_anyone_reply/first_response_test.go
 
 
-## 所有子任务完成才可结束整个任务
+## 2.11 所有子任务完成才可结束整个任务
 
 可以使用sync.waitGroup来实现，这里用csp来实现
 ```go
@@ -380,7 +380,7 @@ func TestAllResponse(t *testing.T) {
 
 详情请见：src/ch23/util_all_reply/all_response_test.go
 
-## 对象池
+## 2.12 对象池
 当对象创建需要消耗大量资源，比如DB连接，可以使用channel，实现对象池来缓存对象
 ```go
 
@@ -442,7 +442,7 @@ func TestObjPool(t *testing.T) {
 src/ch32/obj_pool/obj_pool.go
 src/ch32/obj_pool/obj_pool_test.go
 
-## sync.pool 对象缓存
+## 2.13 sync.pool 对象缓存
 
 ![sync.Pool](/images/syncPool.png)
 
@@ -473,9 +473,9 @@ func TestSyncPool(t *testing.T) {
 
 详情请见：src/ch33/obj_cache/sync_pool_test.go
 
-# 测试
+# 3 测试
 
-## 基本测试
+## 3.1 基本测试
 package "testing"，多个go文件都可以使用这个package，文件间的方法可以相互调用
 
 **内置单元测试框架**
@@ -537,7 +537,7 @@ func TestSquareWithAssert(t *testing.T) {
 ```
 详情请见：src/ch34/unit_test/functions_test.go
 
-## Benchmark
+## 3.2 Benchmark
 
 **基本结构**
 ```go
@@ -575,7 +575,7 @@ BenchmarkConcatStringByBytesBuffer-4    10425752               117.0 ns/op      
 
 详情请见：src/ch35/benchmark/concat_string_test.go
 
-## BDD Behavior Driven Development
+## 3.3 BDD Behavior Driven Development
 行为驱动开发
 
 **项目网站**
@@ -590,9 +590,9 @@ go get -u github.com/smartystreets/goconvey/convey
 
 详情请见：src/ch36/bdd/bdd_spec_test.go
 
-# 反射
+# 4 反射
 
-## reflect
+## 4.1 reflect
 
 - reflect.TypeOf返回类型（reflect.Type）:reflect.TypeOf(f)
 - reflect.ValueOf返回值（reflect.Value）:reflect.ValueOf(f)
@@ -660,7 +660,7 @@ func TestInvokeByName(t *testing.T) {
 
 ```
 
-  ## reflect.DeepEqual
+  ## 4.2 reflect.DeepEqual
 对象深入比较
 
 ```go
@@ -680,7 +680,7 @@ func TestDeepEqual(t *testing.T) {
 ```
 详情请见：src/ch38/flexible_reflect_test.go
 
-## 不安全编程
+## 4.3 不安全编程
 
 ```go
 type MyInt int
