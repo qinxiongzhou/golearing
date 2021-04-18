@@ -47,8 +47,7 @@ func main(){
 func main(arg []string)
 * 2、在程序中直接通过os.Args获取命令行参数
 
-详情请见：src/ch1/hello/hello_world.go
-[hello_world](/src/ch1/hello/hello_world.go)
+参考代码：[hello_world](/src/ch1/hello/hello_world.go)
 
 ## 1.3 go build linux on windows
 在windows系统上编译成linux系统上运行的文件
@@ -111,8 +110,7 @@ func TestImplicit(t *testing.T) {
    t.Log(a,b,c)
 }
 ```
-
-详情请见：src/ch3/type_test/type_test.go
+参考代码：[type_test](/src/ch3/type_test/type_test.go)
 
 ## 1.6 指针类型
 * 1、不支持指针运算（有很多C++程序员会用到指针，然后访问后续空间。这种操作是不支持的）
@@ -140,7 +138,7 @@ func TestString(t *testing.T) {
 }
 ```
 
-详情请见：src/ch3/type_test/type_test.go
+参考代码：[type_test](/src/ch3/type_test/type_test.go)
 
 ## 1.7 用==比较数组
 * 1、相同维数且含有相同个数元素的数组才可以比较
@@ -160,7 +158,7 @@ func TestCompareArray(t *testing.T) {
 }
 ```
 
-详情请见：src/ch4/operator_test/operator_test.go
+参考代码：[operator_test](/src/ch4/operator_test/operator_test.go)
 
 ## 1.8 位运算符
 * &^ 按位置零（自称：右1零）
@@ -187,7 +185,7 @@ func TestBitClear(t *testing.T) {
    t.Log(a&Readable == Readable, a&Writable == Writable, a&Executable == Executable)
 }
 ```
-详情请见：src/ch4/operator_test/operator_test.go
+参考代码：[operator_test](/src/ch4/operator_test/operator_test.go)
 
 ## 1.9 if条件
 * 1、condition表达式结果必须为布尔值
@@ -219,7 +217,7 @@ func TestSwitchCaseCondition(t *testing.T) {
    }
 }
 ```
-详情请见：src/ch5/condition/condition_test.go
+参考代码：[condition_test](/src/ch5/condition/condition_test.go)
 
 ## 1.10 数组init和travel
 **init**
@@ -266,7 +264,7 @@ arr3_sec = arr3[:3]
 t.Log(arr3_sec) //[1 3 4]
 }
 ```
-详情请见：src/ch6/array/array_test.go
+参考代码：[array_test](/src/ch6/array/array_test.go)
 
 ## 1.11 切片内部结构 slice
 
@@ -295,7 +293,7 @@ func TestSliceInit(t *testing.T) {
    t.Log(len(s2), cap(s2))
 }
 ```
-详情请见：src/ch6/slice/slice_test.go
+参考代码：[slice_test](/src/ch6/slice/slice_test.go)
 
 # 2 并发
 
@@ -320,7 +318,7 @@ for i := 0; i < 10; i++ {
     }(i)
 }
 ```
-详情请见:src/ch16/groutine/groutine_test.go
+参考代码：[groutine_test](/src/ch16/groutine/groutine_test.go)
 
 ## 2.2 Mutex RWMutex 锁
 * 在一个 goroutine 获得 Mutex 后，其他 goroutine 只能等到这个 goroutine 释放该 Mutex
@@ -348,7 +346,7 @@ func TestCounterWaitGroup(t *testing.T) {
     t.Logf("counter = %d", counter)
 }
 ```
-详情请见:src/ch17/share_mem/share_mem_test.go
+参考代码：[share_mem_test](/src/ch17/share_mem/share_mem_test.go)
 
 ## 2.3 WaitGroup 等待组
 主线程为了等待goroutine都运行完毕，不得不在程序的末尾使用time.Sleep() 来睡眠一段时间，等待其他线程充分运行。对于简单的代码，100个for循环可以在1秒之内运行完毕，time.Sleep() 也可以达到想要的效果。
@@ -373,7 +371,7 @@ func TestCounterWaitGroup(t *testing.T) {
     wg.Wait()
 }
 ```
-详情请见:src/ch17/share_mem/share_mem_test.go
+参考代码：[share_mem_test](/src/ch17/share_mem/share_mem_test.go)
 
 ## 2.4 csp并发机制，利用channel做协程间异步通讯
 
@@ -411,8 +409,7 @@ func TestAsynService(t *testing.T) {
 	fmt.Println(<-retCh)
 }
 ```
-
-详情请见:src/ch18/csp/async_service_test.go
+参考代码：[async_service_test](/src/ch18/csp/async_service_test.go)
 
 ## 2.5 select 多路选择和超时
 
@@ -446,8 +443,7 @@ func TestAsynService(t *testing.T) {
 	fmt.Println("final Done")
 }
 ```
-
-详情请见:src/ch19/select/select_test.go
+参考代码：[select_test](/src/ch19/select/select_test.go)
 
 ## 2.6 channel的关闭
 
@@ -498,7 +494,7 @@ func TestCloseChannel(t *testing.T) {
 	wg.Wait()
 }
 ```
-详情请见:src/ch20/channel_close/channel_close_test.go
+参考代码：[channel_close_test](/src/ch20/channel_close/channel_close_test.go)
 
 ## 2.7 channel 广播
 利用channel的close，来向每个groutine广播消息
@@ -542,7 +538,7 @@ func isCancelled(cancelCh chan struct{}) bool {
 	}
 }
 ```
-详情请见：src/ch20_/calcel_by_close/cancel_test.go
+参考代码：[cancel_test](/src/ch20_/calcel_by_close/cancel_test.go)
 
 ## 2.8 Context
 
@@ -581,7 +577,7 @@ func isCancelled(ctx context.Context) bool {
 	}
 }
 ```
-详情请见：src/ch20_2/cancel_by_context/cancel_by_context_test.go
+参考代码：[cancel_by_context_test](/src/ch20_2/cancel_by_context/cancel_by_context_test.go)
 
 ## 2.9 singleton 单例模式
 
@@ -599,7 +595,7 @@ func GetSingletonObj() *Singleton {
 	return singleInstance
 }
 ```
-详情请见：src/ch21/singleton/once_test.go
+参考代码：[once_test](/src/ch21/singleton/once_test.go)
 
 ## 2.10 仅需要任意子任务完成即可结束整个任务
 
@@ -632,8 +628,7 @@ func TestFirstResponse(t *testing.T) {
 	t.Log("After:",runtime.NumGoroutine())
 }
 ```
-详情请见：src/ch22/util_anyone_reply/first_response_test.go
-
+参考代码：[first_response_test](/src/ch22/util_anyone_reply/first_response_test.go)
 
 ## 2.11 所有子任务完成才可结束整个任务
 
@@ -668,8 +663,7 @@ func TestAllResponse(t *testing.T) {
 	t.Log("After:", runtime.NumGoroutine())
 }
 ```
-
-详情请见：src/ch23/util_all_reply/all_response_test.go
+参考代码：[all_response_test](/src/ch23/util_all_reply/all_response_test.go)
 
 ## 2.12 对象池
 当对象创建需要消耗大量资源，比如DB连接，可以使用channel，实现对象池来缓存对象
@@ -729,9 +723,8 @@ func TestObjPool(t *testing.T) {
 }
 
 ```
-详情请见：
-src/ch32/obj_pool/obj_pool.go
-src/ch32/obj_pool/obj_pool_test.go
+参考代码：[obj_pool](/src/ch32/obj_pool/obj_pool.go)
+参考代码：[obj_pool_test](/src/ch32/obj_pool/obj_pool_test.go)
 
 ## 2.13 sync.pool 对象缓存
 
@@ -761,8 +754,7 @@ func TestSyncPool(t *testing.T) {
 	fmt.Println(v1)
 }
 ```
-
-详情请见：src/ch33/obj_cache/sync_pool_test.go
+参考代码：[sync_pool_test](/src/ch33/obj_cache/sync_pool_test.go)
 
 # 3 测试
 
@@ -826,7 +818,7 @@ func TestSquareWithAssert(t *testing.T) {
 	}
 }
 ```
-详情请见：src/ch34/unit_test/functions_test.go
+参考代码：[functions_test](/src/ch34/unit_test/functions_test.go)
 
 ## 3.2 Benchmark
 
@@ -864,7 +856,7 @@ BenchmarkConcatStringByBytesBuffer-4    10425752               117.0 ns/op      
 - 16 B/op 表示每次操作申请了16Byte的内存申请
 - 4 allocs/op 表示每次操作申请了4次内存
 
-详情请见：src/ch35/benchmark/concat_string_test.go
+参考代码：[concat_string_test](/src/ch35/benchmark/concat_string_test.go)
 
 ## 3.3 BDD Behavior Driven Development
 行为驱动开发
@@ -879,7 +871,7 @@ https://github.com/smartystreets/goconvey
 go get -u github.com/smartystreets/goconvey/convey
 ```
 
-详情请见：src/ch36/bdd/bdd_spec_test.go
+参考代码：[bdd_spec_test](/src/ch36/bdd/bdd_spec_test.go)
 
 # 4 反射
 
@@ -969,7 +961,7 @@ func TestDeepEqual(t *testing.T) {
 	t.Log("s2 == s3?",reflect.DeepEqual(s2,s3))
 }
 ```
-详情请见：src/ch38/flexible_reflect_test.go
+参考代码：[flexible_reflect_test](/src/ch38/flexible_reflect_test.go)
 
 ## 4.3 不安全编程
 
@@ -1021,5 +1013,4 @@ func TestAtomic(t *testing.T) {
 	wg.Wait()
 }
 ```
-
-详情请见：src/ch39/unsafe_pragramming/unsafe_test.go
+参考代码：[unsafe_test](/src/ch39/unsafe_pragramming/unsafe_test.go)
