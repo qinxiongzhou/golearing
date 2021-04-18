@@ -3,8 +3,80 @@ Go 语言学习的测试案例，从入门开始
 实实在在操一边，才能真正掌握。
 # 1 基础
 
-## 安装
+## 1.1 安装
 
+**下载安装Go语言安装包**
+
+https://golang.org/doc/install
+
+https://golang.google.cn/dl
+
+**IDE**
+
+[Golang IDEA](https://www.jetbrains.com/go/promo/?gclid=Cj0KCQjwse-DBhC7ARIsAI8YcWLG31A2cZS1pnU1zpniXghAs1SEZux39ENFLroFpCUDszuJuIrTtVIaAn2FEALw_wcB)
+
+**环境变量**
+
+GOPATH=%USERPROFILE%\go;D:\workspace\golearing
+
+这里的D:\workspace\golearing是工程的开发目录。基于Windows操作系统上的设置。
+
+## 1.2 HelloWorld
+
+```go
+func main(){
+	fmt.Println("Hello ")
+	if len(os.Args) > 1 {
+		fmt.Println(os.Args[1])
+	}
+	os.Exit(0)
+}
+```
+
+**应用程序的入口**
+* 1、必须是main包：package main
+* 2、必须是main方法：func main(){}
+* 3、文件名不一定是main.go
+
+**退出返回值**
+* 1、Go中main函数不支持任何返回值
+* 2、通过os.Exit来返回状态
+
+**获取命令行参数**
+* 1、main函数不支持传入参数
+func main(arg []string)
+* 2、在程序中直接通过os.Args获取命令行参数
+
+详情请见：src/ch1/hello/hello_world.go
+
+## 1.3 go build linux on windows
+在windows系统上编译成linux系统上运行的文件
+
+**在Windows系统上操作**
+
+```shell
+set GOOS=linux
+go build hello.go
+```
+![build_windows_1.png](/images/build_windows_1.png)
+
+![build_windows_2.png](/images/build_windows_2.png)
+
+**在linux系统上操作**
+
+```shell
+[root@worker ~]# ll 
+total 1892
+-rw-r--r-- 1 root root 1937308 Mar 19 15:28 hello
+[root@worker ~]# chmod 645 hello 
+[root@worker ~]# ll
+total 1892
+-rw-r--r-x 1 root root 1937308 Mar 19 15:28 hello
+[root@worker ~]# ./hello 
+Hello World
+```
+
+![build_linux_1.png](/images/build_linux_1.png)
 
 # 2 并发
 
