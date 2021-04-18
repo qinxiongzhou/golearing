@@ -48,6 +48,7 @@ func main(arg []string)
 * 2、在程序中直接通过os.Args获取命令行参数
 
 详情请见：src/ch1/hello/hello_world.go
+[hello_world](/src/ch1/hello/hello_world.go)
 
 ## 1.3 go build linux on windows
 在windows系统上编译成linux系统上运行的文件
@@ -186,8 +187,115 @@ func TestBitClear(t *testing.T) {
    t.Log(a&Readable == Readable, a&Writable == Writable, a&Executable == Executable)
 }
 ```
-
 详情请见：src/ch4/operator_test/operator_test.go
+
+## 1.9 if条件
+* 1、condition表达式结果必须为布尔值
+* 2、支持变量赋值
+```go
+if var declaration; condition{
+    //code to be executed if condition is true
+}
+```
+```go
+if v,err := someFunc(); err==nil{
+   t.Log("1==1",v)
+}else {
+   t.Log("1==1")
+}
+```
+```go
+func TestSwitchCaseCondition(t *testing.T) {
+   for i := 0; i < 5; i++ {
+      switch {
+      case i%2 == 0:
+         t.Log(fmt.Sprint(i) + " is Even")
+      case i%2 == 1:
+         t.Log(fmt.Sprint(i) + " is Odd")
+      default:
+         t.Log(fmt.Sprint(i) + " is nuknow")
+
+      }
+   }
+}
+```
+详情请见：src/ch5/condition/condition_test.go
+
+## 1.10 数组init和travel
+**init**
+```go
+func TestArrayInit(t *testing.T) {
+   var arr [3]int
+   arr1 := [4]int{1,2,3,4}
+   arr3 := [...]int{1,3,4,5} //不关注具体个数，可以用[...]表示
+   t.Log(arr[1],arr[2])
+   t.Log(arr1,arr3)
+}
+```
+**travel**
+```go
+func TestArrayTravel(t *testing.T) {
+   arr3 := [...]int{1,3,4,5}
+   for i := 0;i<len(arr3);i++ {
+      t.Log(arr3[i])
+   }
+   // idx：数组下标；e；数组值
+   for idx, e := range arr3 {
+      t.Log(idx,e)
+   }
+   //当不关注下标值时，可以用_代替
+   for _, i := range arr3 {
+      t.Log(i)
+   }
+}
+```
+
+**section**
+```go
+func TestArraySection(t *testing.T) {
+arr3 := [...]int{1,3,4,5}
+arr3_sec := arr3[1:2]
+t.Log(arr3_sec) //[3]
+arr3_sec = arr3[1:3]
+t.Log(arr3_sec) //[3 4]
+arr3_sec = arr3[1:len(arr3)]
+t.Log(arr3_sec) //[3 4 5]
+arr3_sec = arr3[1:]
+t.Log(arr3_sec) //[3 4 5]
+arr3_sec = arr3[:3]
+t.Log(arr3_sec) //[1 3 4]
+}
+```
+详情请见：src/ch6/array/array_test.go
+
+## 1.11 切片内部结构 slice
+
+切片：动态数组
+
+声明的方式和数组很类似，只是中括号中无内容：例如；var s0 []int
+
+![slice.png](/images/slice.png)
+
+```go
+func TestSliceInit(t *testing.T) {
+   var s0 []int
+   t.Log(len(s0), cap(s0))
+
+   s0 = append(s0, 1)
+   t.Log(len(s0), cap(s0))
+
+   s1 := []int{1, 2, 3, 4}
+   t.Log(len(s1), cap(s1))
+
+   s2 := make([]int, 3, 5) //声明切片，len=3，cap=5
+   t.Log(len(s2), cap(s2))
+   t.Log(s2[0], s2[1], s2[2])
+   s2 = append(s2,1)
+   t.Log(s2[0], s2[1], s2[2],s2[3])
+   t.Log(len(s2), cap(s2))
+}
+```
+详情请见：src/ch6/slice/slice_test.go
 
 # 2 并发
 
