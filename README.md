@@ -1595,3 +1595,20 @@ func TestAtomic(t *testing.T) {
 参考代码：[unsafe_test](/src/ch39/unsafe_pragramming/unsafe_test.go)
 
 # 5 WEB框架
+
+## helloWorld
+```go
+func main() {
+	http.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
+		fmt.Fprint(writer,"Hello World")
+	})
+	http.HandleFunc("/time", func(writer http.ResponseWriter, request *http.Request) {
+		t := time.Now()
+		timeStr := fmt.Sprintf("{\"time\":\"%s\"}",t)
+		writer.Write([]byte(timeStr))
+	})
+
+	http.ListenAndServe(":8080",nil)
+}
+```
+参考代码：[unsafe_test](/src/ch44/hello_http/hello_http.go)
