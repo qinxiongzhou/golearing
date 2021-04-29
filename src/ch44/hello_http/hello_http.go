@@ -1,4 +1,4 @@
-package hello_http
+package main
 
 import (
 	"fmt"

@@ -1596,7 +1596,7 @@ func TestAtomic(t *testing.T) {
 
 # 5 WEB框架
 
-## helloWorld
+## 5.1 helloWorld
 ```go
 func main() {
 	http.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
@@ -1611,4 +1611,46 @@ func main() {
 	http.ListenAndServe(":8080",nil)
 }
 ```
-参考代码：[unsafe_test](/src/ch44/hello_http/hello_http.go)
+URL分两种：
+- 末尾是/：表示一个子树，后面可以跟其他子路径；
+- 末尾不是/：表示一个叶子，固定的路径；
+
+采用最长匹配原则，如果有多个匹配，一定采用匹配路径最长的那个进行处理
+
+参考代码：[hello_http](/src/ch44/hello_http/hello_http.go)
+
+## 5.2 http_router
+```go
+func Index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	fmt.Fprint(w, "Welcome!\n")
+}
+
+func Hello(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	fmt.Fprintf(w, "hello, %s!\n", ps.ByName("name"))
+}
+
+func main() {
+	router := httprouter.New()
+	router.GET("/", Index)
+	router.GET("/hello/:name", Hello)
+
+	log.Fatal(http.ListenAndServe(":8080", router))
+}
+
+```
+参考代码：[http_router](/src/ch45/http_router/http_router.go)
+
+## 5.3 http_gin
+```go
+func main() {
+	r := gin.Default()
+	r.GET("/ping", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": "pong",
+		})
+	})
+	r.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
+}
+```
+
+参考代码：[http_gin](/src/ch45/http_gin/http_gin.go)
