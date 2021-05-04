@@ -1707,3 +1707,238 @@ func GlobalMiddleware(c *gin.Context) {
 ```
 
 参考代码：[MiddleWareDemo](/src/ch45/http_gin_middleware/MiddleWareDemo.go)
+
+## 5.5 memory存储用户登录信息
+
+```go
+type User struct {
+	Id int
+	Name string
+	Password string
+}
+
+var UserById = make(map[int]*User)
+var UserByName = make(map[string][]*User)
+
+func main() {
+	http.HandleFunc("/login",loginMemory)
+	http.HandleFunc("/info",userInfo)
+	err := http.ListenAndServe(":8080",nil)
+	if err != nil {
+		log.Fatal("ListenAndServe",err)
+	}
+}
+
+func userInfo(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	for _,user := range UserByName[r.Form.Get("username")]{
+		fmt.Fprintf(w," %v",user)
+	}
+}
+
+func loginMemory(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("method:",r.Method)
+	if r.Method == "GET" {
+		t,_ := template.ParseFiles("login.tpl")
+		log.Println(t.Execute(w,nil))
+	} else {
+		_ = r.ParseForm()
+		fmt.Println("username:",r.Form["username"])
+		fmt.Println("password",r.Form["password"])
+		user1 := User{1,r.Form.Get("username"),r.Form.Get("password")}
+
+		store(user1)
+
+		if pwd := r.Form.Get("password");pwd == "123456" {
+			fmt.Fprintf(w,"欢迎登录，Hello %s",r.Form.Get("username"))
+		} else {
+			fmt.Fprintf(w,"密码错误，请重新输入")
+		}
+	}
+
+}
+
+func store(user User) {
+	UserById[user.Id] = &user
+	UserByName[user.Name] = append(UserByName[user.Name],&user)
+}
+```
+参考代码：[memory](/src/ch45/http_gin_memory/memory.go)
+
+## 5.6 mysql
+
+```go
+
+import (
+	"database/sql"
+	"fmt"
+	_ "github.com/go-sql-driver/mysql"
+	"html/template"
+	"log"
+	"net/http"
+	"time"
+)
+
+type User struct {
+	Id int
+	Name string
+	Habits string
+	CreateTime string
+}
+
+var tpl = `<html>
+<head>
+<title></title>
+</head>
+<body>
+<form action="/info" method="post">
+	用户名:<input type="text" name="username">
+	兴趣爱好:<input type="text" name="habits">
+	<input type="submit" value="提交">
+</form>
+</body>
+</html>`
+
+var db *sql.DB
+
+var err error
+
+func init() {
+	db,err = sql.Open("mysql","root:123456@tcp(127.0.0.1:3306)/user?charset=utf8")
+	checkErr(err)
+}
+
+func checkErr(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
+func main() {
+	http.HandleFunc("/form", submitForm)
+	http.HandleFunc("/info", userInfo)
+
+	err := http.ListenAndServe(":8080", nil)
+	if err != nil {
+		log.Fatal("ListenAndServe", err)
+	}
+}
+
+func userInfo(w http.ResponseWriter, r *http.Request) {
+	_ = r.ParseForm()
+	if r.Method == "POST" {
+		user1 := User{Name: r.Form.Get("username"),Habits: r.Form.Get("habits")}
+		store(user1)
+		fmt.Fprintf(w," %v",queryByName(r.Form.Get("username")))
+	}
+
+}
+
+func queryByName(name string) User {
+	user := User{}
+	stmt,err := db.Prepare("select * from user where name=?")
+	checkErr(err)
+
+	rows,_ :=stmt.Query(name)
+
+	for rows.Next(){
+		var id int
+		var name string
+		var habits string
+		var createdTime string
+		err = rows.Scan(&id, &name, &habits, &createdTime)
+		checkErr(err)
+		fmt.Printf("[%d, %s, %s, %s]\n", id, name, habits, createdTime)
+		user = User{id,name,habits,createdTime}
+		break
+	}
+
+	return user
+}
+
+func store(user User) {
+	//插入数据
+	stmt,err := db.Prepare("INSERT INTO user SET name=?,habits=?,created_time=?")
+	t := time.Now().UTC().Format("2006-01-02")
+	res,err := stmt.Exec(user.Name,user.Habits,t)
+
+	checkErr(err)
+
+	id,err := res.LastInsertId()
+	checkErr(err)
+
+	fmt.Println("last insert id is: %d \n",id)
+}
+
+func submitForm(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("method:",r.Method)//获取请求的方法
+	var t *template.Template
+	t = template.New("Products")//创建一个模板
+	t,_ = t.Parse(tpl)
+	log.Println(t.Execute(w,nil))
+}
+```
+参考代码：[mysql](/src/ch45/http_gin_mysql/mysql.go)
+
+## 5.7 beego ORM框架
+
+```go
+package main
+import (
+	"fmt"
+	"github.com/astaxie/beego/client/orm"
+	_ "github.com/go-sql-driver/mysql" // import your used driver
+)
+
+// Model Struct
+type Person struct {
+	PersonId int    `orm:"pk"`
+	Name   string `orm:"size(100)"`
+}
+
+func init() {
+	// set default database
+	orm.RegisterDataBase("default", "mysql", "root:123456@tcp(127.0.0.1:3306)/user?charset=utf8")
+
+	// register model
+	orm.RegisterModel(new(Person))
+
+	// create table
+	orm.RunSyncdb("default", false, true)
+}
+
+func main() {
+	o := orm.NewOrm()
+
+	person := Person{Name: "aoho"}
+
+	// insert
+	id, err := o.Insert(&person)
+	fmt.Printf("ID: %d, ERR: %v\n", id, err)
+
+	// update
+	person.Name = "boho"
+	num, err := o.Update(&person)
+	fmt.Printf("NUM: %d, ERR: %v\n", num, err)
+
+	// read one
+	u := Person{PersonId: person.PersonId}
+	err = o.Read(&u)
+	fmt.Printf("ERR: %v\n", err)
+
+	var maps []orm.Params
+
+	res, err := o.Raw("SELECT * FROM person").Values(&maps)
+	fmt.Printf("NUM: %d, ERR: %v\n", res, err)
+	for _, term := range maps {
+		fmt.Println(term["person_id"], ":", term["name"])
+	}
+	// delete
+	//num, err = o.Delete(&u)
+	//fmt.Printf("NUM: %d, ERR: %v\n", num, err)
+}
+```
+
+参考代码：[beego](/src/ch45/http_gin_beego/beego.go)
+
+
