@@ -1941,4 +1941,313 @@ func main() {
 
 参考代码：[beego](/src/ch45/http_gin_beego/beego.go)
 
+# 6 注册中心 consul
+注册中心的类型非常多，这里只拿consul来实现
+## 6.1 consul的运行
+
+[consul 下载](https://www.consul.io/downloads)
+
+windows环境是一个.exe结尾的可执行文件
+
+运行一个单实例的consul服务
+
+```shell
+consul.exe agent -dev
+```
+运行结果：在本地8500端口启动consul服务
+
+```shell
+D:\softwork\consul_1.9.5_windows_amd64>consul.exe agent -dev
+==> Starting Consul agent...
+           Version: '1.9.5'
+           Node ID: '2afc9ed7-d9a5-88c6-50db-e07aa64cc943'
+         Node name: 'qinxiongzhou'
+        Datacenter: 'dc1' (Segment: '<all>')
+            Server: true (Bootstrap: false)
+       Client Addr: [127.0.0.1] (HTTP: 8500, HTTPS: -1, gRPC: 8502, DNS: 8600)
+      Cluster Addr: 127.0.0.1 (LAN: 8301, WAN: 8302)
+           Encrypt: Gossip: false, TLS-Outgoing: false, TLS-Incoming: false, Auto-Encrypt-TLS: false
+
+==> Log data will now stream in as it occurs:
+
+    2021-05-06T17:29:58.732+0800 [INFO]  agent.server.raft: initial configuration: index=1 servers="[{Suffrage:Voter ID:2afc9ed7-d9a5-88c6-50db-e07aa6
+4cc943 Address:127.0.0.1:8300}]"
+    2021-05-06T17:29:58.751+0800 [INFO]  agent.server.raft: entering follower state: follower="Node at 127.0.0.1:8300 [Follower]" leader=
+    2021-05-06T17:29:58.752+0800 [INFO]  agent.server.serf.wan: serf: EventMemberJoin: qinxiongzhou.dc1 127.0.0.1
+    2021-05-06T17:29:58.753+0800 [INFO]  agent.server.serf.lan: serf: EventMemberJoin: qinxiongzhou 127.0.0.1
+    2021-05-06T17:29:58.754+0800 [INFO]  agent.router: Initializing LAN area manager
+    2021-05-06T17:29:58.755+0800 [INFO]  agent.server: Adding LAN server: server="qinxiongzhou (Addr: tcp/127.0.0.1:8300) (DC: dc1)"
+    2021-05-06T17:29:58.755+0800 [INFO]  agent.server: Handled event for server in area: event=member-join server=qinxiongzhou.dc1 area=wan
+    2021-05-06T17:29:58.756+0800 [INFO]  agent: Started DNS server: address=127.0.0.1:8600 network=udp
+    2021-05-06T17:29:58.758+0800 [INFO]  agent: Started DNS server: address=127.0.0.1:8600 network=tcp
+    2021-05-06T17:29:58.759+0800 [INFO]  agent: Starting server: address=127.0.0.1:8500 network=tcp protocol=http
+    2021-05-06T17:29:58.760+0800 [WARN]  agent: DEPRECATED Backwards compatibility with pre-1.9 metrics enabled. These metrics will be removed in a fu
+ture version of Consul. Set `telemetry { disable_compat_1.9 = true }` to disable them.
+    2021-05-06T17:29:58.762+0800 [INFO]  agent: started state syncer
+    2021-05-06T17:29:58.760+0800 [INFO]  agent: Started gRPC server: address=127.0.0.1:8502 network=tcp
+==> Consul agent running!
+    2021-05-06T17:29:58.818+0800 [WARN]  agent.server.raft: heartbeat timeout reached, starting election: last-leader=
+    2021-05-06T17:29:58.819+0800 [INFO]  agent.server.raft: entering candidate state: node="Node at 127.0.0.1:8300 [Candidate]" term=2
+    2021-05-06T17:29:58.820+0800 [DEBUG] agent.server.raft: votes: needed=1
+    2021-05-06T17:29:58.820+0800 [DEBUG] agent.server.raft: vote granted: from=2afc9ed7-d9a5-88c6-50db-e07aa64cc943 term=2 tally=1
+    2021-05-06T17:29:58.821+0800 [INFO]  agent.server.raft: election won: tally=1
+    2021-05-06T17:29:58.822+0800 [INFO]  agent.server.raft: entering leader state: leader="Node at 127.0.0.1:8300 [Leader]"
+    2021-05-06T17:29:58.823+0800 [INFO]  agent.server: cluster leadership acquired
+    2021-05-06T17:29:58.823+0800 [INFO]  agent.server: New leader elected: payload=qinxiongzhou
+    2021-05-06T17:29:58.823+0800 [DEBUG] agent.server: Cannot upgrade to new ACLs: leaderMode=0 mode=0 found=true leader=127.0.0.1:8300
+    2021-05-06T17:29:58.826+0800 [DEBUG] agent.server.autopilot: autopilot is now running
+    2021-05-06T17:29:58.827+0800 [DEBUG] agent.server.autopilot: state update routine is now running
+    2021-05-06T17:29:58.827+0800 [INFO]  agent.leader: started routine: routine="federation state anti-entropy"
+    2021-05-06T17:29:58.829+0800 [INFO]  agent.leader: started routine: routine="federation state pruning"
+    2021-05-06T17:29:58.830+0800 [DEBUG] connect.ca.consul: consul CA provider configured: id=07:80:c8:de:f6:41:86:29:8f:9c:b8:17:d6:48:c2:d5:c5:5c:7f
+:0c:03:f7:cf:97:5a:a7:c1:68:aa:23:ae:81 is_primary=true
+    2021-05-06T17:29:58.843+0800 [INFO]  agent.server.connect: initialized primary datacenter CA with provider: provider=consul
+    2021-05-06T17:29:58.844+0800 [INFO]  agent.leader: started routine: routine="intermediate cert renew watch"
+    2021-05-06T17:29:58.845+0800 [INFO]  agent.leader: started routine: routine="CA root pruning"
+    2021-05-06T17:29:58.845+0800 [DEBUG] agent.server: successfully established leadership: duration=22.0042ms
+    2021-05-06T17:29:58.846+0800 [INFO]  agent.server: member joined, marking health alive: member=qinxiongzhou
+    2021-05-06T17:29:59.090+0800 [INFO]  agent.server: federation state anti-entropy synced
+    2021-05-06T17:29:59.151+0800 [DEBUG] agent: Skipping remote check since it is managed automatically: check=serfHealth
+    2021-05-06T17:29:59.154+0800 [INFO]  agent: Synced node info
+    2021-05-06T17:29:59.266+0800 [DEBUG] agent: Skipping remote check since it is managed automatically: check=serfHealth
+    2021-05-06T17:29:59.267+0800 [DEBUG] agent: Node info in sync
+    2021-05-06T17:29:59.269+0800 [DEBUG] agent: Node info in sync
+```
+结果：
+
+![consul.png](/images/consul.png)
+
+## 6.2 DisconverClient定义
+
+定义：
+
+```go
+type DiscoveryClient interface {
+	/**
+	 * 服务注册接口
+	 * @param serviceName 服务名
+	 * @param instanceId 服务实例Id
+	 * @param instancePort 服务实例端口
+	 * @param healthCheckUrl 健康检查地址
+	 * @param instanceHost 服务实例地址
+	 * @param meta 服务实例元数据
+	 */
+	Register(serviceName, instanceId, healthCheckUrl string, instanceHost string, instancePort int, meta map[string]string, logger *log.Logger) bool
+	/**
+	 * 服务注销接口
+	 * @param instanceId 服务实例Id
+	 */
+	DeRegister(instanceId string, logger *log.Logger) bool
+	/**
+	 * 发现服务实例接口
+	 * @param serviceName 服务名
+	 */
+	DiscoverServices(serviceName string, logger *log.Logger) []interface{}
+}
+```
+参考代码：[disconver_client](/src/ch45discover/discover/discover_client.go)
+
+## 6.3 DisconverClient实现，利用go-kit
+
+```go
+package discover
+
+import (
+	"github.com/go-kit/kit/sd/consul"
+	"github.com/hashicorp/consul/api"
+	"github.com/hashicorp/consul/api/watch"
+	"log"
+	"strconv"
+	"sync"
+)
+
+type KitDiscoverClient struct {
+	Host   string // Consul Host
+	Port   int    // Consul Port
+	client consul.Client
+	// 连接 consul 的配置
+	config *api.Config
+	mutex sync.Mutex
+	// 服务实例缓存字段
+	instancesMap sync.Map
+}
+
+func NewKitDiscoverClient(consulHost string, consulPort int) (DiscoveryClient, error) {
+	// 通过 Consul Host 和 Consul Port 创建一个 consul.Client
+	consulConfig := api.DefaultConfig()
+	consulConfig.Address = consulHost + ":" + strconv.Itoa(consulPort)
+	apiClient, err := api.NewClient(consulConfig)
+	if err != nil {
+		return nil, err
+	}
+	client := consul.NewClient(apiClient)
+	return &KitDiscoverClient{
+		Host:   consulHost,
+		Port:   consulPort,
+		config:consulConfig,
+		client: client,
+	}, err
+}
+
+func (consulClient *KitDiscoverClient) Register(serviceName, instanceId, healthCheckUrl string, instanceHost string, instancePort int, meta map[string]string, logger *log.Logger) bool {
+
+	// 1. 构建服务实例元数据
+	serviceRegistration := &api.AgentServiceRegistration{
+		ID:      instanceId,
+		Name:    serviceName,
+		Address: instanceHost,
+		Port:    instancePort,
+		Meta:    meta,
+		Check: &api.AgentServiceCheck{
+			DeregisterCriticalServiceAfter: "30s",
+			HTTP:                           "http://" + instanceHost + ":" + strconv.Itoa(instancePort) + healthCheckUrl,
+			Interval:                       "15s",
+		},
+	}
+
+	// 2. 发送服务注册到 Consul 中
+	err := consulClient.client.Register(serviceRegistration)
+
+	if err != nil {
+		log.Println("Register Service Error!")
+		return false
+	}
+	log.Println("Register Service Success!")
+	return true
+}
+
+func (consulClient *KitDiscoverClient) DeRegister(instanceId string, logger *log.Logger) bool {
+
+	// 构建包含服务实例 ID 的元数据结构体
+	serviceRegistration := &api.AgentServiceRegistration{
+		ID: instanceId,
+	}
+	// 发送服务注销请求
+	err := consulClient.client.Deregister(serviceRegistration)
+
+	if err != nil {
+		logger.Println("Deregister Service Error!")
+		return false
+	}
+	log.Println("Deregister Service Success!")
+
+	return true
+}
+
+func (consulClient *KitDiscoverClient) DiscoverServices(serviceName string, logger *log.Logger) []interface{} {
+
+	//  该服务已监控并缓存
+	instanceList, ok := consulClient.instancesMap.Load(serviceName)
+	if ok {
+		return instanceList.([]interface{})
+	}
+	// 申请锁
+	consulClient.mutex.Lock()
+	defer consulClient.mutex.Unlock()
+	// 再次检查是否监控
+	instanceList, ok = consulClient.instancesMap.Load(serviceName)
+	if ok {
+		return instanceList.([]interface{})
+	} else {
+		// 注册监控
+		go func() {
+			// 使用 consul 服务实例监控来监控某个服务名的服务实例列表变化
+			params := make(map[string]interface{})
+			params["type"] = "service"
+			params["service"] = serviceName
+			plan, _ := watch.Parse(params)
+			plan.Handler = func(u uint64, i interface{}) {
+				if i == nil {
+					return
+				}
+				v, ok := i.([]*api.ServiceEntry)
+				if !ok {
+					return // 数据异常，忽略
+				}
+				// 没有服务实例在线
+				if len(v) == 0 {
+					consulClient.instancesMap.Store(serviceName, []interface{}{})
+				}
+				var healthServices []interface{}
+				for _, service := range v {
+					if service.Checks.AggregatedStatus() == api.HealthPassing {
+						healthServices = append(healthServices, service.Service)
+					}
+				}
+				consulClient.instancesMap.Store(serviceName, healthServices)
+			}
+			defer plan.Stop()
+			plan.Run(consulClient.config.Address)
+		}()
+	}
+
+	// 根据服务名请求服务实例列表
+	entries, _, err := consulClient.client.Service(serviceName, "", false, nil)
+	if err != nil {
+		consulClient.instancesMap.Store(serviceName, []interface{}{})
+		logger.Println("Discover Service Error!")
+		return nil
+	}
+	instances := make([]interface{}, len(entries))
+	for i := 0; i < len(instances); i++ {
+		instances[i] = entries[i].Service
+	}
+	consulClient.instancesMap.Store(serviceName, instances)
+	return instances
+}
+
+```
+参考代码：[kit_discover_client](/src/ch45discover/discover/kit_discover_client.go)
+
+## 6.4 main运行
+
+```go
+func main() {
+	// 从命令行中读取相关参数，没有时使用默认值
+	var (
+		// 服务地址和服务名
+		servicePort = flag.Int("service.port", 10086, "service port")
+		serviceHost = flag.String("service.host", "127.0.0.1", "service host")
+		serviceName = flag.String("service.name", "SayHello", "service name")
+		// consul 地址
+		consulPort = flag.Int("consul.port", 8500, "consul port")
+		consulHost = flag.String("consul.host", "127.0.0.1", "consul host")
+	)
+	flag.Parse()
+
+	// 声明服务发现客户端
+	var discoveryClient discover.DiscoveryClient
+	discoveryClient, err := discover.NewKitDiscoverClient(*consulHost, *consulPort)
+	// 声明并初始化 Service
+	var svc = service.NewDiscoveryServiceImpl(discoveryClient)
+
+	// 省略...
+	
+	//创建http.Handler
+	r := transport.MakeHttpHandler(ctx, endpts, config.KitLogger)
+	// 定义服务实例ID
+	instanceId := *serviceName + "-" + uuid.Must(uuid.NewV4()).String()
+	// 启动 http server
+	go func() {
+		config.Logger.Println("Http Server start at port:" + strconv.Itoa(*servicePort))
+		//启动前执行注册
+		if !discoveryClient.Register(*serviceName, instanceId, "/health", *serviceHost,  *servicePort, nil, config.Logger){
+			config.Logger.Printf("string-service for service %s failed.", serviceName)
+			// 注册失败，服务启动失败
+			os.Exit(-1)
+		}
+		handler := r
+		errChan <- http.ListenAndServe(":"  + strconv.Itoa(*servicePort), handler)
+	}()
+
+	error := <-errChan
+	//服务退出取消注册
+	discoveryClient.DeRegister(instanceId, config.Logger)
+	config.Logger.Println(error)
+}
+```
+
+参考代码：[main](/src/ch45discover/main.go)
+
+
 
