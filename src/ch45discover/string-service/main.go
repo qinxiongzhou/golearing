@@ -60,8 +60,8 @@ func main() {
 	//创建http.Handler
 	r := transport.MakeHttpHandler(ctx, endpts, config.KitLogger)
 
-	instanceId := *serviceName + "-" + uuid.NewV4().String()
-	//instanceId := *serviceName + "-" + uuid.Must(uuid.NewV4()).String()
+	//instanceId := *serviceName + "-" + uuid.NewV4().String()
+	instanceId := *serviceName + "-" + uuid.Must(uuid.NewV4()).String()
 
 	//http server
 	go func() {

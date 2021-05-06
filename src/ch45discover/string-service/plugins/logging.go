@@ -2,7 +2,7 @@ package plugins
 
 import (
 	"github.com/go-kit/kit/log"
-	"github.com/longjoy/micro-go-book/ch6-discovery/string-service/service"
+	"ch45discover/string-service/service"
 	"time"
 )
 
