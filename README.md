@@ -2249,5 +2249,121 @@ func main() {
 
 参考代码：[main](/src/ch45discover/main.go)
 
+# 7 RPC 远程过程调用
+
+Remote Procedure Call。它是一种通过网络从远程计算机程序上请求服务，而不需要了解底层网络技术的协议。
+
+## 7.1 简易的Go语言原生RPC
+
+- 方法是可输出的，例如：方法名的首字母必须大写
+- 方法必须有两个参数，必须是输出类型或者是内建类型
+- 方法的第二个参数是指针类型
+- 方法返回类型为error
+
+```go
+func (t *T) MethodName(argType T1, replyType *T2) error
+```
+server 端
+```go
+type StringRequest struct {
+	A string
+	B string
+}
+
+type Service interface {
+	//Concat a and b
+	Concat(req StringRequest,ret *string) error
+	//a,b pkg string value
+	Diff(req StringRequest,ret *string) error
+}
+
+type StringService struct {
+}
+
+func (s StringService) Concat(req StringRequest, ret *string) error {
+	if len(req.A) + len(req.B) > StrMaxSize{
+		*ret = ""
+		return ErrMaxSize
+	}
+	*ret = req.A + req.B
+	return nil
+}
+
+func (s StringService) Diff(req StringRequest, ret *string) error {
+	if len(req.A) < 1  || len(req.B) < 1{
+		*ret = ""
+		return nil
+	}
+	res := ""
+	if len(req.A) >= len(req.B){
+		for _,char := range req.B{
+			if strings.Contains(req.A,string(char)){
+				res = res + string(char)
+			}
+		}
+	} else {
+		for _,char := range req.A{
+			if strings.Contains(req.B,string(char)){
+				res = res + string(char)
+			}
+
+		}
+	}
+	*ret = res
+	return nil
+}
+```
+
+参考代码：[server](/src/ch45rpc/basic/string-service/server.go)
+
+server端启动
+
+```go
+func main() {
+	stringService := new(service.StringService)
+	registerError := rpc.Register(stringService)
+
+	if registerError != nil {
+		log.Fatal("Register error: ",registerError)
+	}
+
+	rpc.HandleHTTP()
+	l,e := net.Listen("tcp","127.0.0.1:1234")
+	if e != nil {
+		log.Fatal("listen error: ",e)
+	}
+	http.Serve(l,nil)
+}
+```
+参考代码：[server](/src/ch45rpc/basic/server.go)
+
+client 端
+
+```go
+func TestClient(t *testing.T) {
+	client, err := rpc.DialHTTP("tcp","127.0.0.1:1234")
+	if err != nil {
+		log.Fatal("dialing:", err)
+	}
+
+	//Synchronous call
+	stringReq := &service.StringRequest{"A","B"}
+	var reply string
+	err = client.Call("StringService.Concat",stringReq,&reply)
+	if err != nil {
+		log.Fatal("StringService error:", err)
+	}
+	fmt.Printf("StringService Concat : %s concat %s = %s\n",stringReq.A,stringReq.B,reply)
+
+
+	//async call
+	stringReq = &service.StringRequest{"ACD","BDF"}
+	call := client.Go("StringService.Diff",stringReq,&reply,nil)
+	_ = <-call.Done
+	fmt.Printf("StringService Diff : %s diff %s = %s\n",stringReq.A,stringReq.B,reply)
+}
+```
+
+参考代码：[client_test](/src/ch45rpc/basic/client_test.go)
 
 
