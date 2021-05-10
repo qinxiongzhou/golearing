@@ -2366,4 +2366,26 @@ func TestClient(t *testing.T) {
 
 参考代码：[client_test](/src/ch45rpc/basic/client_test.go)
 
+## 7.2 grpc
+
+### 7.2.1 grpc 安装
+
+```shell
+go get -u google.golang.org/grpc
+
+结果：
+go: downloading google.golang.org/grpc v1.37.0
+go: downloading golang.org/x/net v0.0.0-20190311183353-d8887717615a
+go: downloading github.com/golang/protobuf v1.4.2
+go: downloading golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a
+go: downloading github.com/golang/protobuf v1.5.2
+go: downloading golang.org/x/net v0.0.0-20210508051633-16afe75a6701
+go: downloading google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013
+go: downloading golang.org/x/sys v0.0.0-20210507161434-a76c4d0a0096
+go: downloading google.golang.org/protobuf v1.25.0
+go: downloading google.golang.org/protobuf v1.26.0
+go: downloading golang.org/x/text v0.3.0
+go: downloading google.golang.org/genproto v0.0.0-20210506142907-4a47615972c2
+go: downloading golang.org/x/text v0.3.6
+```
 
