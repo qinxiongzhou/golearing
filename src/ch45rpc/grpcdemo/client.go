@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/longjoy/micro-go-book/ch7-rpc/pb"
+	"ch45rpc/grpcdemo/pb"
 	"google.golang.org/grpc"
 )
 

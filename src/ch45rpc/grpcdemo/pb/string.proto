@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+option go_package = "ch45rpc/grpcdemo/pb";
+
 package pb;
 
 service StringService{

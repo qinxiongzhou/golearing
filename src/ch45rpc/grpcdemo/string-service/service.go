@@ -3,7 +3,7 @@ package string_service
 import (
 	"context"
 	"errors"
-	"github.com/longjoy/micro-go-book/ch7-rpc/pb"
+	"ch45rpc/grpcdemo/pb"
 	"strings"
 )
 
@@ -14,11 +14,12 @@ const (
 // Service errors
 var (
 	ErrMaxSize = errors.New("maximum size of 1024 bytes exceeded")
-
 	ErrStrValue = errors.New("maximum size of 1024 bytes exceeded")
 )
 
-type StringService struct{}
+type StringService struct{
+	pb.UnsafeStringServiceServer
+}
 
 func (s *StringService) Concat(ctx context.Context, req *pb.StringRequest) (*pb.StringResponse, error) {
 	if len(req.A)+len(req.B) > StrMaxSize {

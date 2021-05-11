@@ -2368,24 +2368,125 @@ func TestClient(t *testing.T) {
 
 ## 7.2 grpc
 
-### 7.2.1 grpc 安装
+### 7.2.1 安装
 
-```shell
-go get -u google.golang.org/grpc
+grpc的安装过程，随着时间推移，可能有差别。本节文字写于2021-5-11，确保可用。如有问题，请自己参考官网教程。
 
-结果：
-go: downloading google.golang.org/grpc v1.37.0
-go: downloading golang.org/x/net v0.0.0-20190311183353-d8887717615a
-go: downloading github.com/golang/protobuf v1.4.2
-go: downloading golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a
-go: downloading github.com/golang/protobuf v1.5.2
-go: downloading golang.org/x/net v0.0.0-20210508051633-16afe75a6701
-go: downloading google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013
-go: downloading golang.org/x/sys v0.0.0-20210507161434-a76c4d0a0096
-go: downloading google.golang.org/protobuf v1.25.0
-go: downloading google.golang.org/protobuf v1.26.0
-go: downloading golang.org/x/text v0.3.0
-go: downloading google.golang.org/genproto v0.0.0-20210506142907-4a47615972c2
-go: downloading golang.org/x/text v0.3.6
+[grpc官网](https://grpc.io/docs/languages/go/quickstart/)
+
+- Go的安装，安装最新的三个主要版本。安装说明，请参考[Go’s Getting Started guide](https://golang.org/doc/install)
+- Protocol Buffer安装，即protoc，要求是3.0版本。[Protocol Buffer Compiler Installation](https://grpc.io/docs/protoc-installation/)
+  windows环境安装，请下载protoc-3.16.0-win64.zip。[Protocol_离线win版本](https://github.com/protocolbuffers/protobuf/releases/tag/v3.16.0/) 并把路径配置到path环境变量中
+- Go plugins安装
+  * 安装protoc-gen-go和protoc-gen-go-grpc插件
+  ```go
+  go get google.golang.org/protobuf/cmd/protoc-gen-go \
+         google.golang.org/grpc/cmd/protoc-gen-go-grpc
+  ```
+  * 更新到path环境变量中，让protoc可以找到这两个插件。下载后的路径一般在GOPATH路径的bin目录中，例如：C:\Users\ryan\go\bin
+
+### 7.2.2 编译运行
+
+写两个接口的proto文件，两个消息体
+```go
+syntax = "proto3";
+option go_package = "ch45rpc/grpcdemo/pb";
+package pb;
+service StringService{
+    rpc Concat(StringRequest) returns (StringResponse) {}
+    rpc Diff(StringRequest) returns (StringResponse) {}
+}
+message StringRequest {
+    string A = 1;
+    string B = 2;
+}
+message StringResponse {
+    string Ret = 1;
+    string err = 2;
+}
 ```
+参考代码：[string.proto](/src/ch45rpc/grpcdemo/pb/string.proto)
+
+**编译**
+```shell
+protoc --go_out=. --go_opt=paths=source_relative \ 
+       --go-grpc_out=. --go-grpc_opt=paths=source_relative \ 
+       pb\string.proto
+```
+
+生成string.pb.go、string_grpc.pb.go两个文件
+
+### 7.2.3 接口实现
+
+**接口实现**
+```go
+type StringService struct{
+	pb.UnsafeStringServiceServer
+}
+func (s *StringService) Concat(ctx context.Context, req *pb.StringRequest) (*pb.StringResponse, error) {
+	if len(req.A)+len(req.B) > StrMaxSize {
+		response := pb.StringResponse{Ret: ""}
+		return &response, nil
+	}
+	response := pb.StringResponse{Ret: req.A + req.B}
+	return &response, nil
+}
+func (s *StringService) Diff(ctx context.Context, req *pb.StringRequest) (*pb.StringResponse, error) {
+	if len(req.A) < 1 || len(req.B) < 1 {
+		response := pb.StringResponse{Ret: ""}
+		return &response, nil
+	}
+	res := ""
+	if len(req.A) >= len(req.B) {
+		for _, char := range req.B {
+			if strings.Contains(req.A, string(char)) {
+				res = res + string(char)
+			}
+		}
+	} else {
+		for _, char := range req.A {
+			if strings.Contains(req.B, string(char)) {
+				res = res + string(char)
+			}
+		}
+	}
+	response := pb.StringResponse{Ret: res}
+	return &response, nil
+}
+```
+参考代码：[service.go](/src/ch45rpc/grpcdemo/string-service/service.go)
+
+**server端**
+```go
+func main() {
+	flag.Parse()
+	lis, err := net.Listen("tcp", "127.0.0.1:1234")
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+	grpcServer := grpc.NewServer()
+	stringService := new(string_service.StringService)
+	pb.RegisterStringServiceServer(grpcServer, stringService)
+	grpcServer.Serve(lis)
+}
+```
+参考代码：[server.go](/src/ch45rpc/grpcdemo/server.go)
+
+**client端**
+
+```go
+func main() {
+	serviceAddress := "127.0.0.1:1234"
+	conn, err := grpc.Dial(serviceAddress, grpc.WithInsecure())
+	if err != nil {
+		panic("connect error")
+	}
+	defer conn.Close()
+	bookClient := pb.NewStringServiceClient(conn)
+	stringReq := &pb.StringRequest{A: "A", B: "B"}
+	reply, _ := bookClient.Concat(context.Background(), stringReq)
+	fmt.Printf("StringService Concat : %s concat %s = %s\n", stringReq.A, stringReq.B, reply.Ret)
+}
+```
+参考代码：[client.go](/src/ch45rpc/grpcdemo/client.go)
 
