@@ -2366,7 +2366,7 @@ func TestClient(t *testing.T) {
 
 参考代码：[client_test](/src/ch45rpc/basic/client_test.go)
 
-## 7.2 grpc
+## 7.2 gRPC
 
 ### 7.2.1 安装
 
@@ -2490,3 +2490,80 @@ func main() {
 ```
 参考代码：[client.go](/src/ch45rpc/grpcdemo/client.go)
 
+## 7.3 gRPC流式编程
+
+gRPC可以定义4中类型的服务接口，分别是一元RPC、服务器流RPC、客户端流式RPC和双向流RPC
+
+- 一元RPC是指客户端向服务器发送请求并获得响应，就像正常的函数调用一样。
+  ```go
+  rpc Concat(StringRequest) returns (StringResponse){}
+  ```
+- 服务器流RPC是指客户端发送一个对象，服务器端返回一个Stream（流式消息）
+  ```go
+  rpc LotsOfServerStream(StringRequest) returns (stream StringResponse){}
+  ```
+- 客户端流式RPC，客户端发送一个stream(流式消息)服务端返回一个对象
+  ```go
+  rpc LotsOfClientStream(Stream StringRequest) returns (StringResponse){}
+  ```
+- 双向流RPC，两个流独立运行。类似WebSocket(长链接)，客户端可以向服务端请求消息，服务端也可以向客户端请求消息
+  ```go
+  rpc LotsOfServerAndClientStream(stream StringRequest) returns (stream StringResponse){}
+  ```
+
+参考代码：[string.proto](/src/ch45rpc/grpcstreamdemo/pb/string.proto)
+
+**编译**
+```shell
+protoc --go_out=. --go_opt=paths=source_relative \ 
+       --go-grpc_out=. --go-grpc_opt=paths=source_relative \ 
+       pb\string.proto
+```
+
+**双向流RPC 服务端**
+```go
+func (s *StringService) LotsOfServerAndClientStream(server pb.StringService_LotsOfServerAndClientStreamServer) error {
+	for {
+		in, err := server.Recv()
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			log.Printf("failed to recv %v", err)
+			return err
+		}
+		server.Send(&pb.StringResponse{Ret: in.A + in.B})
+	}
+	return nil
+}
+```
+参考代码：[service.go](/src/ch45rpc/grpcstreamdemo/string-service/service.go)
+
+**双向流RPC 客户端**
+```go
+func sendClientAndServerStreamRequest(client pb.StringServiceClient) {
+	fmt.Printf("test sendClientAndServerStreamRequest \n")
+	var err error
+	stream, err := client.LotsOfServerAndClientStream(context.Background())
+	if err != nil {
+		log.Printf("failed to call: %v", err)
+		return
+	}
+	var i int
+	for {
+		err1 := stream.Send(&pb.StringRequest{A: strconv.Itoa(i), B: strconv.Itoa(i + 1)})
+		if err1 != nil {
+			log.Printf("failed to send: %v", err)
+			break
+		}
+		reply, err2 := stream.Recv()
+		if err2 != nil {
+			log.Printf("failed to recv: %v", err)
+			break
+		}
+		log.Printf("sendClientAndServerStreamRequest Ret is : %s", reply.Ret)
+		i++
+	}
+}
+```
+参考代码：[client.go](/src/ch45rpc/grpcstreamdemo/client.go)
