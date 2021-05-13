@@ -872,6 +872,31 @@ dep ensure
 5、工程目录如下图
 ![dep_5](/images/dep_5.png)
 
+## 1.30 包管理工具 Go Modules
+Go Modules于1.11版本初步引入，在1.12版本中正式支持，它是Go语言官方提供的包管理解决方法。
+
+Go Modules和传统的GOPATH不同，不需要包含固定的三个子目录，一个源代码目录，甚至空目录都可以作为Module，只要其中包含go.mod文件。
+
+新建一个Module：
+```shell
+go mod init [module name]
+```
+将会在当前目录生成一个go.mod文件，内容为：
+```go
+module ch45config/local
+go 1.16
+```
+通过require关键字引入相关依赖
+```go
+
+require (
+github.com/spf13/viper v1.7.1
+)
+```
+最后通过download命令手动下载依赖关系
+```go
+go mod download
+```
 
 # 2 并发
 
