@@ -2567,3 +2567,131 @@ func sendClientAndServerStreamRequest(client pb.StringServiceClient) {
 }
 ```
 参考代码：[client.go](/src/ch45rpc/grpcstreamdemo/client.go)
+
+
+# 8 配置管理
+
+## 8.1 本地化配置viper
+
+配置文件
+```yaml
+RegisterTime: "2019-6-18 10:00:00"
+Address: "Shanghai"
+ResumeInformation:
+  Name: "aoho"
+  Sex: "male"
+  Age: 20
+  Habits:
+    - "Basketball"
+    - "Running"
+
+```
+
+配置类
+```go
+func init() {
+	viper.AutomaticEnv()
+	initDefault()
+
+	if err := viper.ReadInConfig(); err != nil {
+		fmt.Printf("err:%s\n", err)
+	}
+	if err := sub("ResumeInformation", &Resume); err != nil {
+		log.Fatal("Fail to parse config", err)
+	}
+}
+func initDefault() {
+	//设置读取的配置文件
+	viper.SetConfigName("resume_config")
+	//添加读取的配置文件路径
+	viper.AddConfigPath("./ch45config/local/")
+	//windows环境下为%GOPATH，linux环境下为$GOPATH
+	viper.AddConfigPath("E:/qinxiongzhou/go/learning/src/ch45config/local/")
+	//设置配置文件类型
+	viper.SetConfigType("yaml")
+}
+func main() {
+	fmt.Printf(
+		"姓名: %s\n爱好: %s\n性别: %s \n年龄: %d \n",
+		Resume.Name,
+		Resume.Habits,
+		Resume.Sex,
+		Resume.Age,
+	)
+	//反序列化
+	parseYaml(viper.GetViper())
+	fmt.Println(Contains("Basketball", Resume.Habits))
+}
+func Contains(obj interface{}, target interface{}) (bool, error) {
+	targetValue := reflect.ValueOf(target)
+	switch reflect.TypeOf(target).Kind() {
+	case reflect.Slice, reflect.Array:
+		for i := 0; i < targetValue.Len(); i++ {
+			if targetValue.Index(i).Interface() == obj {
+				return true, nil
+			}
+		}
+	case reflect.Map:
+		if targetValue.MapIndex(reflect.ValueOf(obj)).IsValid() {
+			return true, nil
+		}
+	}
+
+	return false, errors.New("not in array")
+}
+type ResumeInformation struct {
+	Name   string
+	Sex    string
+	Age    int
+	Habits []interface{}
+}
+type ResumeSetting struct {
+	RegisterTime      string
+	Address           string
+	ResumeInformation ResumeInformation
+}
+func parseYaml(v *viper.Viper) {
+	var resumeConfig ResumeSetting
+	if err := v.Unmarshal(&resumeConfig); err != nil {
+		fmt.Printf("err:%s", err)
+	}
+	fmt.Println("resume config:\n ", resumeConfig)
+}
+func sub(key string, value interface{}) error {
+	log.Printf("配置文件的前缀为：%v", key)
+	sub := viper.Sub(key)
+	sub.AutomaticEnv()
+	sub.SetEnvPrefix(key)
+	return sub.Unmarshal(value)
+}
+```
+
+运行，可能会出现如下异常
+```shell
+cannot find package "github.com/hashicorp/hcl/hcl/printer" volatiletech/sqlboiler#904
+```
+这个的原因是viper采用Modules的方式，引用的hcl包是v1.0.0版本的。我们的工程，也需要改成modules的方式，否则会使用hcl的最新版本，而最新版本中，并没有printer的包。
+
+**解决方案：**
+项目目录下，执行mod init，生成go.mod文件
+```shell
+>go mod init
+
+go: creating new go.mod: module ch45config/local
+go: to add module requirements and sums:
+        go mod tidy
+```
+
+在生成的go.mod文件中，添加如下
+```go
+require (
+	github.com/spf13/viper v1.7.1
+)
+```
+设置idea：打开Go Modules模块。File>settings>Go>Go Modules
+![goModules.png](/images/goModules.png)
+结果：
+![ExternalLibrariesGoModules.png](/images/ExternalLibrariesGoModules.png)
+
+如果idea没有显示Go Modules模块，请把go.mod文件放到项目根目录上。
+
