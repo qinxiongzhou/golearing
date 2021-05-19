@@ -64,8 +64,8 @@ func main() {
 	//创建http.Handler
 	r := transport.MakeHttpHandler(ctx, endpts, config.KitLogger)
 	// 定义服务实例ID
-	//instanceId := *serviceName + "-" + uuid.NewV4().String()
-	instanceId := *serviceName + "-" + uuid.Must(uuid.NewV4()).String()
+	instanceId := *serviceName + "-" + uuid.NewV4().String()
+	//instanceId := *serviceName + "-" + uuid.Must(uuid.NewV4()).String()
 	// 启动 http server
 	go func() {
 		config.Logger.Println("Http Server start at port:" + strconv.Itoa(*servicePort))
