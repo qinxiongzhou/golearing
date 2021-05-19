@@ -2720,3 +2720,90 @@ require (
 
 如果idea没有显示Go Modules模块，请把go.mod文件放到项目根目录上。
 
+# 9 网关
+
+## 9.1 自定义网关
+**关键代码：** 主要是为http.ListenAndServe提供一个proxy的方法
+```go
+
+func main() {
+	//创建反向代理
+	proxy := NewReverseProxy(consulClient, logger)
+	//开始监听
+	go func() {
+		logger.Log("transport", "HTTP", "addr", "9090")
+		errc <- http.ListenAndServe(":9090", proxy)
+	}()
+}
+
+// NewReverseProxy 创建反向代理处理方法
+func NewReverseProxy(client *api.Client, logger log.Logger) *httputil.ReverseProxy {
+
+	//创建Director
+	director := func(req *http.Request) {
+
+		//查询原始请求路径
+		reqPath := req.URL.Path
+		if reqPath == "" {
+			return
+		}
+		//按照分隔符'/'对路径进行分解，获取服务名称serviceName
+		pathArray := strings.Split(reqPath, "/")
+		serviceName := pathArray[1]
+
+		//调用consul api查询serviceName的服务实例列表
+		result, _, err := client.Catalog().Service(serviceName, "", nil)
+		if err != nil {
+			logger.Log("ReverseProxy failed", "query service instance error", err.Error())
+			return
+		}
+
+		if len(result) == 0 {
+			logger.Log("ReverseProxy failed", "no such service instance", serviceName)
+			return
+		}
+
+		//重新组织请求路径，去掉服务名称部分
+		destPath := strings.Join(pathArray[2:], "/")
+
+		//随机选择一个服务实例
+		tgt := result[rand.Int()%len(result)]
+		logger.Log("service id", tgt.ServiceID)
+
+		//设置代理服务地址信息
+		req.URL.Scheme = "http"
+		req.URL.Host = fmt.Sprintf("%s:%d", tgt.ServiceAddress, tgt.ServicePort)
+		req.URL.Path = "/" + destPath
+	}
+	return &httputil.ReverseProxy{Director: director}
+```
+参考代码：[myGateway.go](/src/ch45-gateway/gateway/main.go)
+
+**运行：**
+
+1、运行consul。如有疑惑，请参考6.1章节
+```shell
+consul.exe agent -dev
+```
+查看consul，http://localhost:8500/ui/dc1/services
+
+2、运行service服务。代码在/ch45discover/main.go。
+
+服务运行在10086端口，有say-hello的接口，http://localhost:10086/say-hello ，返回如下
+```json
+{
+  message: "Hello World!"
+}
+```
+
+3、运行网关服务。代码在/ch45-gateway/gateway/main.go。
+
+访问http://localhost:9090/SayHello/say-hello ，返回如下：
+```json
+{
+  message: "Hello World!"
+}
+```
+
+## 9.2 kong网关
+
