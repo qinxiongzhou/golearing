@@ -2807,3 +2807,203 @@ consul.exe agent -dev
 
 ## 9.2 kong网关
 
+**Step 1. Install docker**
+
+```shell
+yum -y install docker
+```
+
+**Step  2. Pull the Kong Gateway Docker image**
+
+Pull the following Docker image:
+```shell
+docker pull kong/kong-gateway:2.3.3.2-alpine
+```
+You should now have your Kong Gateway image locally.
+
+Verify that it worked, and find the image ID matching your repository:
+
+```shell
+docker images
+```
+Tag the image ID for easier use:
+```shell
+docker tag <IMAGE_ID> kong-ee
+```
+Note: Replace <IMAGE_ID> with the one matching your repository.
+
+**Step 3. Create a Docker network**
+
+Create a custom network to allow the containers to discover and communicate with each other.
+```shell
+docker network create kong-ee-net
+```
+
+**Step 4. Start a database**
+
+If created database by docker, please remove the docker container. Otherwise skip.
+
+```shell
+docker rm kong-ee-database
+```
+
+Start a PostgreSQL container:
+
+```shell
+docker run -d --name kong-ee-database \
+  --network=kong-ee-net \
+  -p 5432:5432 \
+  -e "POSTGRES_USER=kong" \
+  -e "POSTGRES_DB=kong" \
+  -e "POSTGRES_PASSWORD=kong" \
+  postgres:9.6
+```
+
+**Step 5. Prepare the Kong database**
+
+```shell
+docker run --rm --network=kong-ee-net \
+  -e "KONG_DATABASE=postgres" \
+  -e "KONG_PG_HOST=kong-ee-database" \
+  -e "KONG_PG_PASSWORD=kong" \
+  -e "KONG_PASSWORD=<SOMETHING-YOU-KNOW>" \
+  kong-ee kong migrations bootstrap
+```
+
+Note: For KONG_PASSWORD, replace <SOMETHING-YOU-KNOW> with a valid password that only you know.
+
+If an error occures, try the following code.
+
+```shell
+docker run --rm --network=kong-ee-net \
+  -e "KONG_DATABASE=postgres" \
+  -e "KONG_PG_HOST=8.136.212.63" \
+  -e "KONG_PG_PASSWORD=kong" \
+  -e "KONG_PASSWORD=ryan1234" \
+  kong-ee kong migrations bootstrap
+```
+
+You can connect the postgreSQL server by the postgreSQL client.
+
+```shell
+psql -h localhost -p 5432 -U kong -d kong
+```
+
+**Step 6. Start the gateway with Kong Manager**
+
+If created database by docker, please remove the docker container. Otherwise skip.
+
+```shell
+docker rm kong-ee
+```
+
+Start:
+
+```shell
+docker run -d --name kong-ee --network=kong-ee-net \
+  -e "KONG_DATABASE=postgres" \
+  -e "KONG_PG_HOST=kong-ee-database" \
+  -e "KONG_PG_PASSWORD=kong" \
+  -e "KONG_PROXY_ACCESS_LOG=/dev/stdout" \
+  -e "KONG_ADMIN_ACCESS_LOG=/dev/stdout" \
+  -e "KONG_PROXY_ERROR_LOG=/dev/stderr" \
+  -e "KONG_ADMIN_ERROR_LOG=/dev/stderr" \
+  -e "KONG_ADMIN_LISTEN=0.0.0.0:8001" \
+  -e "KONG_ADMIN_GUI_URL=http://<DNSorIP>:8002" \
+  -p 8000:8000 \
+  -p 8443:8443 \
+  -p 8001:8001 \
+  -p 8444:8444 \
+  -p 8002:8002 \
+  -p 8445:8445 \
+  -p 8003:8003 \
+  -p 8004:8004 \
+  kong-ee
+```
+
+Note: For KONG_ADMIN_GUI_URL, replace <DNSorIP> with with the DNS name or IP of the Docker host. 
+
+KONG_ADMIN_GUI_URL should have a protocol, for example, http://.
+
+If  an error occures, try the following code.
+
+```shell
+docker run -d --name kong-ee --network=kong-ee-net \
+  -e "KONG_DATABASE=postgres" \
+  -e "KONG_PG_HOST=8.136.212.63" \
+  -e "KONG_PG_PASSWORD=kong" \
+  -e "KONG_PROXY_ACCESS_LOG=/dev/stdout" \
+  -e "KONG_ADMIN_ACCESS_LOG=/dev/stdout" \
+  -e "KONG_PROXY_ERROR_LOG=/dev/stderr" \
+  -e "KONG_ADMIN_ERROR_LOG=/dev/stderr" \
+  -e "KONG_ADMIN_LISTEN=0.0.0.0:8001" \
+  -e "KONG_ADMIN_GUI_URL=http://8.136.212.63:8002" \
+  -p 8000:8000 \
+  -p 8443:8443 \
+  -p 8001:8001 \
+  -p 8444:8444 \
+  -p 8002:8002 \
+  -p 8445:8445 \
+  -p 8003:8003 \
+  -p 8004:8004 \
+  kong-ee
+```
+
+**Step 7. Verify your installation**
+
+Access the /services endpoint using the Admin API:
+
+```shell
+curl -i -X GET --url http://<DNSorIP>:8001/services
+```
+
+You should receive an HTTP/1.1 200 OK message.
+
+Verify that Kong Manager
+
+```shell
+http://<DNSorIP>:8002
+```
+
+**Step 8. 查看页面并验证**
+
+1、dashboard
+
+http://8.136.212.63:8002/default/dashboard
+
+![kong-default.png](/images/kong-default.png)
+
+2、启动一个8080端口的服务
+
+Go写的一个服务，端口是8080
+
+[http_gin](/images/kong-ping.png)
+
+```shell
+[root@iZbp1d7m9diff6o0tayjoqZ ~]# ./http_gin &
+[1] 2249
+```
+
+http://8.136.212.63:8080/ping
+
+![kong-ping.png](/images/kong-ping.png)
+
+3、配置kong网关
+
+配置服务
+
+![kong-service.png](/images/kong-service.png)
+
+配置路由
+
+![kong-routes.png](/images/kong-routes.png)
+
+kong默认通过8000端口处理代理请求。
+
+http://8.136.212.63:8000/api/ping
+
+![kong-api-ping.png](/images/kong-api-ping.png)
+
+
+
+
