@@ -2977,7 +2977,7 @@ http://8.136.212.63:8002/default/dashboard
 
 Go写的一个服务，端口是8080
 
-[http_gin](/images/kong-ping.png)
+[http_gin下载](/images/http_gin)
 
 ```shell
 [root@iZbp1d7m9diff6o0tayjoqZ ~]# ./http_gin &
