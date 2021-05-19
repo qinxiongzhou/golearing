@@ -4,12 +4,11 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"ch45discover/string-service/config"
-	"ch45discover/string-service/endpoint"
-	"ch45discover/string-service/plugins"
-	"ch45discover/string-service/service"
-	"ch45discover/string-service/transport"
-	"github.com/longjoy/micro-go-book/common/discover"
+	"ch45-resiliency/string-service/config"
+	"ch45-resiliency/string-service/endpoint"
+	"ch45-resiliency/string-service/service"
+	"ch45-resiliency/string-service/transport"
+	"ch45-resiliency/common/discover"
 	uuid "github.com/satori/go.uuid"
 	"net/http"
 	"os"
@@ -43,9 +42,6 @@ func main() {
 	}
 	var svc service.Service
 	svc = service.StringService{}
-	// add logging middleware
-	svc = plugins.LoggingMiddleware(config.KitLogger)(svc)
-
 	stringEndpoint := endpoint.MakeStringEndpoint(svc)
 
 	//创建健康检查的Endpoint
@@ -61,7 +57,6 @@ func main() {
 	r := transport.MakeHttpHandler(ctx, endpts, config.KitLogger)
 
 	instanceId := *serviceName + "-" + uuid.NewV4().String()
-	//instanceId := *serviceName + "-" + uuid.Must(uuid.NewV4()).String()
 
 	//http server
 	go func() {

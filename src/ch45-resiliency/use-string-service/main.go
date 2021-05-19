@@ -4,12 +4,13 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"ch45discover/string-service/config"
-	"ch45discover/string-service/endpoint"
-	"ch45discover/string-service/plugins"
-	"ch45discover/string-service/service"
-	"ch45discover/string-service/transport"
-	"github.com/longjoy/micro-go-book/common/discover"
+	"github.com/go-kit/kit/circuitbreaker"
+	"ch45-resiliency/use-string-service/config"
+	"ch45-resiliency/use-string-service/endpoint"
+	"ch45-resiliency/use-string-service/service"
+	"ch45-resiliency/use-string-service/transport"
+	"ch45-resiliency/common/discover"
+	"ch45-resiliency/common/loadbalance"
 	uuid "github.com/satori/go.uuid"
 	"net/http"
 	"os"
@@ -20,13 +21,12 @@ import (
 
 func main() {
 
-	// 获取命令行参数
 	var (
-		servicePort = flag.Int("service.port", 10085, "service port")
+		servicePort = flag.Int("service.port", 10086, "service port")
 		serviceHost = flag.String("service.host", "127.0.0.1", "service host")
 		consulPort = flag.Int("consul.port", 8500, "consul port")
 		consulHost = flag.String("consul.host", "127.0.0.1", "consul host")
-		serviceName = flag.String("service.name", "string", "service name")
+		serviceName = flag.String("service.name", "use-string", "service name")
 	)
 
 	flag.Parse()
@@ -42,26 +42,23 @@ func main() {
 
 	}
 	var svc service.Service
-	svc = service.StringService{}
-	// add logging middleware
-	svc = plugins.LoggingMiddleware(config.KitLogger)(svc)
-
-	stringEndpoint := endpoint.MakeStringEndpoint(svc)
+	svc = service.NewUseStringService(discoveryClient, &loadbalance.RandomLoadBalance{} )
+	useStringEndpoint := endpoint.MakeUseStringEndpoint(svc)
+	useStringEndpoint = circuitbreaker.Hystrix(service.StringServiceCommandName)(useStringEndpoint)
 
 	//创建健康检查的Endpoint
 	healthEndpoint := endpoint.MakeHealthCheckEndpoint(svc)
 
 	//把算术运算Endpoint和健康检查Endpoint封装至StringEndpoints
-	endpts := endpoint.StringEndpoints{
-		StringEndpoint:      stringEndpoint,
-		HealthCheckEndpoint: healthEndpoint,
+	endpts := endpoint.UseStringEndpoints{
+		UseStringEndpoint:      useStringEndpoint,
+		HealthCheckEndpoint: 	healthEndpoint,
 	}
 
 	//创建http.Handler
 	r := transport.MakeHttpHandler(ctx, endpts, config.KitLogger)
 
 	instanceId := *serviceName + "-" + uuid.NewV4().String()
-	//instanceId := *serviceName + "-" + uuid.Must(uuid.NewV4()).String()
 
 	//http server
 	go func() {
@@ -69,7 +66,7 @@ func main() {
 		config.Logger.Println("Http Server start at port:" + strconv.Itoa(*servicePort))
 		//启动前执行注册
 		if !discoveryClient.Register(*serviceName, instanceId, "/health", *serviceHost,  *servicePort, nil, config.Logger){
-			config.Logger.Printf("string-service for service %s failed.", serviceName)
+			config.Logger.Printf("use-string-service for service %s failed.", serviceName)
 			// 注册失败，服务启动失败
 			os.Exit(-1)
 		}
@@ -82,6 +79,7 @@ func main() {
 		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 		errChan <- fmt.Errorf("%s", <-c)
 	}()
+
 
 	error := <-errChan
 	//服务退出取消注册
