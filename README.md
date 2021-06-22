@@ -872,6 +872,31 @@ dep ensure
 5、工程目录如下图
 ![dep_5](/images/dep_5.png)
 
+## 1.30 包管理工具 Go Modules
+Go Modules于1.11版本初步引入，在1.12版本中正式支持，它是Go语言官方提供的包管理解决方法。
+
+Go Modules和传统的GOPATH不同，不需要包含固定的三个子目录，一个源代码目录，甚至空目录都可以作为Module，只要其中包含go.mod文件。
+
+新建一个Module：
+```shell
+go mod init [module name]
+```
+将会在当前目录生成一个go.mod文件，内容为：
+```go
+module ch45config/local
+go 1.16
+```
+通过require关键字引入相关依赖
+```go
+
+require (
+github.com/spf13/viper v1.7.1
+)
+```
+最后通过download命令手动下载依赖关系
+```go
+go mod download
+```
 
 # 2 并发
 
@@ -1940,5 +1965,1045 @@ func main() {
 ```
 
 参考代码：[beego](/src/ch45/http_gin_beego/beego.go)
+
+# 6 注册中心 consul
+注册中心的类型非常多，这里只拿consul来实现
+## 6.1 consul的运行
+
+[consul 下载](https://www.consul.io/downloads)
+
+windows环境是一个.exe结尾的可执行文件
+
+运行一个单实例的consul服务
+
+```shell
+consul.exe agent -dev
+```
+运行结果：在本地8500端口启动consul服务
+
+```shell
+D:\softwork\consul_1.9.5_windows_amd64>consul.exe agent -dev
+==> Starting Consul agent...
+           Version: '1.9.5'
+           Node ID: '2afc9ed7-d9a5-88c6-50db-e07aa64cc943'
+         Node name: 'qinxiongzhou'
+        Datacenter: 'dc1' (Segment: '<all>')
+            Server: true (Bootstrap: false)
+       Client Addr: [127.0.0.1] (HTTP: 8500, HTTPS: -1, gRPC: 8502, DNS: 8600)
+      Cluster Addr: 127.0.0.1 (LAN: 8301, WAN: 8302)
+           Encrypt: Gossip: false, TLS-Outgoing: false, TLS-Incoming: false, Auto-Encrypt-TLS: false
+
+==> Log data will now stream in as it occurs:
+
+    2021-05-06T17:29:58.732+0800 [INFO]  agent.server.raft: initial configuration: index=1 servers="[{Suffrage:Voter ID:2afc9ed7-d9a5-88c6-50db-e07aa6
+4cc943 Address:127.0.0.1:8300}]"
+    2021-05-06T17:29:58.751+0800 [INFO]  agent.server.raft: entering follower state: follower="Node at 127.0.0.1:8300 [Follower]" leader=
+    2021-05-06T17:29:58.752+0800 [INFO]  agent.server.serf.wan: serf: EventMemberJoin: qinxiongzhou.dc1 127.0.0.1
+    2021-05-06T17:29:58.753+0800 [INFO]  agent.server.serf.lan: serf: EventMemberJoin: qinxiongzhou 127.0.0.1
+    2021-05-06T17:29:58.754+0800 [INFO]  agent.router: Initializing LAN area manager
+    2021-05-06T17:29:58.755+0800 [INFO]  agent.server: Adding LAN server: server="qinxiongzhou (Addr: tcp/127.0.0.1:8300) (DC: dc1)"
+    2021-05-06T17:29:58.755+0800 [INFO]  agent.server: Handled event for server in area: event=member-join server=qinxiongzhou.dc1 area=wan
+    2021-05-06T17:29:58.756+0800 [INFO]  agent: Started DNS server: address=127.0.0.1:8600 network=udp
+    2021-05-06T17:29:58.758+0800 [INFO]  agent: Started DNS server: address=127.0.0.1:8600 network=tcp
+    2021-05-06T17:29:58.759+0800 [INFO]  agent: Starting server: address=127.0.0.1:8500 network=tcp protocol=http
+    2021-05-06T17:29:58.760+0800 [WARN]  agent: DEPRECATED Backwards compatibility with pre-1.9 metrics enabled. These metrics will be removed in a fu
+ture version of Consul. Set `telemetry { disable_compat_1.9 = true }` to disable them.
+    2021-05-06T17:29:58.762+0800 [INFO]  agent: started state syncer
+    2021-05-06T17:29:58.760+0800 [INFO]  agent: Started gRPC server: address=127.0.0.1:8502 network=tcp
+==> Consul agent running!
+    2021-05-06T17:29:58.818+0800 [WARN]  agent.server.raft: heartbeat timeout reached, starting election: last-leader=
+    2021-05-06T17:29:58.819+0800 [INFO]  agent.server.raft: entering candidate state: node="Node at 127.0.0.1:8300 [Candidate]" term=2
+    2021-05-06T17:29:58.820+0800 [DEBUG] agent.server.raft: votes: needed=1
+    2021-05-06T17:29:58.820+0800 [DEBUG] agent.server.raft: vote granted: from=2afc9ed7-d9a5-88c6-50db-e07aa64cc943 term=2 tally=1
+    2021-05-06T17:29:58.821+0800 [INFO]  agent.server.raft: election won: tally=1
+    2021-05-06T17:29:58.822+0800 [INFO]  agent.server.raft: entering leader state: leader="Node at 127.0.0.1:8300 [Leader]"
+    2021-05-06T17:29:58.823+0800 [INFO]  agent.server: cluster leadership acquired
+    2021-05-06T17:29:58.823+0800 [INFO]  agent.server: New leader elected: payload=qinxiongzhou
+    2021-05-06T17:29:58.823+0800 [DEBUG] agent.server: Cannot upgrade to new ACLs: leaderMode=0 mode=0 found=true leader=127.0.0.1:8300
+    2021-05-06T17:29:58.826+0800 [DEBUG] agent.server.autopilot: autopilot is now running
+    2021-05-06T17:29:58.827+0800 [DEBUG] agent.server.autopilot: state update routine is now running
+    2021-05-06T17:29:58.827+0800 [INFO]  agent.leader: started routine: routine="federation state anti-entropy"
+    2021-05-06T17:29:58.829+0800 [INFO]  agent.leader: started routine: routine="federation state pruning"
+    2021-05-06T17:29:58.830+0800 [DEBUG] connect.ca.consul: consul CA provider configured: id=07:80:c8:de:f6:41:86:29:8f:9c:b8:17:d6:48:c2:d5:c5:5c:7f
+:0c:03:f7:cf:97:5a:a7:c1:68:aa:23:ae:81 is_primary=true
+    2021-05-06T17:29:58.843+0800 [INFO]  agent.server.connect: initialized primary datacenter CA with provider: provider=consul
+    2021-05-06T17:29:58.844+0800 [INFO]  agent.leader: started routine: routine="intermediate cert renew watch"
+    2021-05-06T17:29:58.845+0800 [INFO]  agent.leader: started routine: routine="CA root pruning"
+    2021-05-06T17:29:58.845+0800 [DEBUG] agent.server: successfully established leadership: duration=22.0042ms
+    2021-05-06T17:29:58.846+0800 [INFO]  agent.server: member joined, marking health alive: member=qinxiongzhou
+    2021-05-06T17:29:59.090+0800 [INFO]  agent.server: federation state anti-entropy synced
+    2021-05-06T17:29:59.151+0800 [DEBUG] agent: Skipping remote check since it is managed automatically: check=serfHealth
+    2021-05-06T17:29:59.154+0800 [INFO]  agent: Synced node info
+    2021-05-06T17:29:59.266+0800 [DEBUG] agent: Skipping remote check since it is managed automatically: check=serfHealth
+    2021-05-06T17:29:59.267+0800 [DEBUG] agent: Node info in sync
+    2021-05-06T17:29:59.269+0800 [DEBUG] agent: Node info in sync
+```
+结果：
+
+![consul.png](/images/consul.png)
+
+## 6.2 DisconverClient定义
+
+定义：
+
+```go
+type DiscoveryClient interface {
+	/**
+	 * 服务注册接口
+	 * @param serviceName 服务名
+	 * @param instanceId 服务实例Id
+	 * @param instancePort 服务实例端口
+	 * @param healthCheckUrl 健康检查地址
+	 * @param instanceHost 服务实例地址
+	 * @param meta 服务实例元数据
+	 */
+	Register(serviceName, instanceId, healthCheckUrl string, instanceHost string, instancePort int, meta map[string]string, logger *log.Logger) bool
+	/**
+	 * 服务注销接口
+	 * @param instanceId 服务实例Id
+	 */
+	DeRegister(instanceId string, logger *log.Logger) bool
+	/**
+	 * 发现服务实例接口
+	 * @param serviceName 服务名
+	 */
+	DiscoverServices(serviceName string, logger *log.Logger) []interface{}
+}
+```
+参考代码：[disconver_client](/src/ch45discover/discover/discover_client.go)
+
+## 6.3 DisconverClient实现，利用go-kit
+
+```go
+package discover
+
+import (
+	"github.com/go-kit/kit/sd/consul"
+	"github.com/hashicorp/consul/api"
+	"github.com/hashicorp/consul/api/watch"
+	"log"
+	"strconv"
+	"sync"
+)
+
+type KitDiscoverClient struct {
+	Host   string // Consul Host
+	Port   int    // Consul Port
+	client consul.Client
+	// 连接 consul 的配置
+	config *api.Config
+	mutex sync.Mutex
+	// 服务实例缓存字段
+	instancesMap sync.Map
+}
+
+func NewKitDiscoverClient(consulHost string, consulPort int) (DiscoveryClient, error) {
+	// 通过 Consul Host 和 Consul Port 创建一个 consul.Client
+	consulConfig := api.DefaultConfig()
+	consulConfig.Address = consulHost + ":" + strconv.Itoa(consulPort)
+	apiClient, err := api.NewClient(consulConfig)
+	if err != nil {
+		return nil, err
+	}
+	client := consul.NewClient(apiClient)
+	return &KitDiscoverClient{
+		Host:   consulHost,
+		Port:   consulPort,
+		config:consulConfig,
+		client: client,
+	}, err
+}
+
+func (consulClient *KitDiscoverClient) Register(serviceName, instanceId, healthCheckUrl string, instanceHost string, instancePort int, meta map[string]string, logger *log.Logger) bool {
+
+	// 1. 构建服务实例元数据
+	serviceRegistration := &api.AgentServiceRegistration{
+		ID:      instanceId,
+		Name:    serviceName,
+		Address: instanceHost,
+		Port:    instancePort,
+		Meta:    meta,
+		Check: &api.AgentServiceCheck{
+			DeregisterCriticalServiceAfter: "30s",
+			HTTP:                           "http://" + instanceHost + ":" + strconv.Itoa(instancePort) + healthCheckUrl,
+			Interval:                       "15s",
+		},
+	}
+
+	// 2. 发送服务注册到 Consul 中
+	err := consulClient.client.Register(serviceRegistration)
+
+	if err != nil {
+		log.Println("Register Service Error!")
+		return false
+	}
+	log.Println("Register Service Success!")
+	return true
+}
+
+func (consulClient *KitDiscoverClient) DeRegister(instanceId string, logger *log.Logger) bool {
+
+	// 构建包含服务实例 ID 的元数据结构体
+	serviceRegistration := &api.AgentServiceRegistration{
+		ID: instanceId,
+	}
+	// 发送服务注销请求
+	err := consulClient.client.Deregister(serviceRegistration)
+
+	if err != nil {
+		logger.Println("Deregister Service Error!")
+		return false
+	}
+	log.Println("Deregister Service Success!")
+
+	return true
+}
+
+func (consulClient *KitDiscoverClient) DiscoverServices(serviceName string, logger *log.Logger) []interface{} {
+
+	//  该服务已监控并缓存
+	instanceList, ok := consulClient.instancesMap.Load(serviceName)
+	if ok {
+		return instanceList.([]interface{})
+	}
+	// 申请锁
+	consulClient.mutex.Lock()
+	defer consulClient.mutex.Unlock()
+	// 再次检查是否监控
+	instanceList, ok = consulClient.instancesMap.Load(serviceName)
+	if ok {
+		return instanceList.([]interface{})
+	} else {
+		// 注册监控
+		go func() {
+			// 使用 consul 服务实例监控来监控某个服务名的服务实例列表变化
+			params := make(map[string]interface{})
+			params["type"] = "service"
+			params["service"] = serviceName
+			plan, _ := watch.Parse(params)
+			plan.Handler = func(u uint64, i interface{}) {
+				if i == nil {
+					return
+				}
+				v, ok := i.([]*api.ServiceEntry)
+				if !ok {
+					return // 数据异常，忽略
+				}
+				// 没有服务实例在线
+				if len(v) == 0 {
+					consulClient.instancesMap.Store(serviceName, []interface{}{})
+				}
+				var healthServices []interface{}
+				for _, service := range v {
+					if service.Checks.AggregatedStatus() == api.HealthPassing {
+						healthServices = append(healthServices, service.Service)
+					}
+				}
+				consulClient.instancesMap.Store(serviceName, healthServices)
+			}
+			defer plan.Stop()
+			plan.Run(consulClient.config.Address)
+		}()
+	}
+
+	// 根据服务名请求服务实例列表
+	entries, _, err := consulClient.client.Service(serviceName, "", false, nil)
+	if err != nil {
+		consulClient.instancesMap.Store(serviceName, []interface{}{})
+		logger.Println("Discover Service Error!")
+		return nil
+	}
+	instances := make([]interface{}, len(entries))
+	for i := 0; i < len(instances); i++ {
+		instances[i] = entries[i].Service
+	}
+	consulClient.instancesMap.Store(serviceName, instances)
+	return instances
+}
+
+```
+参考代码：[kit_discover_client](/src/ch45discover/discover/kit_discover_client.go)
+
+## 6.4 main运行
+
+```go
+func main() {
+	// 从命令行中读取相关参数，没有时使用默认值
+	var (
+		// 服务地址和服务名
+		servicePort = flag.Int("service.port", 10086, "service port")
+		serviceHost = flag.String("service.host", "127.0.0.1", "service host")
+		serviceName = flag.String("service.name", "SayHello", "service name")
+		// consul 地址
+		consulPort = flag.Int("consul.port", 8500, "consul port")
+		consulHost = flag.String("consul.host", "127.0.0.1", "consul host")
+	)
+	flag.Parse()
+
+	// 声明服务发现客户端
+	var discoveryClient discover.DiscoveryClient
+	discoveryClient, err := discover.NewKitDiscoverClient(*consulHost, *consulPort)
+	// 声明并初始化 Service
+	var svc = service.NewDiscoveryServiceImpl(discoveryClient)
+
+	// 省略...
+	
+	//创建http.Handler
+	r := transport.MakeHttpHandler(ctx, endpts, config.KitLogger)
+	// 定义服务实例ID
+	instanceId := *serviceName + "-" + uuid.Must(uuid.NewV4()).String()
+	// 启动 http server
+	go func() {
+		config.Logger.Println("Http Server start at port:" + strconv.Itoa(*servicePort))
+		//启动前执行注册
+		if !discoveryClient.Register(*serviceName, instanceId, "/health", *serviceHost,  *servicePort, nil, config.Logger){
+			config.Logger.Printf("string-service for service %s failed.", serviceName)
+			// 注册失败，服务启动失败
+			os.Exit(-1)
+		}
+		handler := r
+		errChan <- http.ListenAndServe(":"  + strconv.Itoa(*servicePort), handler)
+	}()
+
+	error := <-errChan
+	//服务退出取消注册
+	discoveryClient.DeRegister(instanceId, config.Logger)
+	config.Logger.Println(error)
+}
+```
+
+参考代码：[main](/src/ch45discover/main.go)
+
+# 7 RPC 远程过程调用
+
+Remote Procedure Call。它是一种通过网络从远程计算机程序上请求服务，而不需要了解底层网络技术的协议。
+
+## 7.1 简易的Go语言原生RPC
+
+- 方法是可输出的，例如：方法名的首字母必须大写
+- 方法必须有两个参数，必须是输出类型或者是内建类型
+- 方法的第二个参数是指针类型
+- 方法返回类型为error
+
+```go
+func (t *T) MethodName(argType T1, replyType *T2) error
+```
+server 端
+```go
+type StringRequest struct {
+	A string
+	B string
+}
+
+type Service interface {
+	//Concat a and b
+	Concat(req StringRequest,ret *string) error
+	//a,b pkg string value
+	Diff(req StringRequest,ret *string) error
+}
+
+type StringService struct {
+}
+
+func (s StringService) Concat(req StringRequest, ret *string) error {
+	if len(req.A) + len(req.B) > StrMaxSize{
+		*ret = ""
+		return ErrMaxSize
+	}
+	*ret = req.A + req.B
+	return nil
+}
+
+func (s StringService) Diff(req StringRequest, ret *string) error {
+	if len(req.A) < 1  || len(req.B) < 1{
+		*ret = ""
+		return nil
+	}
+	res := ""
+	if len(req.A) >= len(req.B){
+		for _,char := range req.B{
+			if strings.Contains(req.A,string(char)){
+				res = res + string(char)
+			}
+		}
+	} else {
+		for _,char := range req.A{
+			if strings.Contains(req.B,string(char)){
+				res = res + string(char)
+			}
+
+		}
+	}
+	*ret = res
+	return nil
+}
+```
+
+参考代码：[server](/src/ch45rpc/basic/string-service/server.go)
+
+server端启动
+
+```go
+func main() {
+	stringService := new(service.StringService)
+	registerError := rpc.Register(stringService)
+
+	if registerError != nil {
+		log.Fatal("Register error: ",registerError)
+	}
+
+	rpc.HandleHTTP()
+	l,e := net.Listen("tcp","127.0.0.1:1234")
+	if e != nil {
+		log.Fatal("listen error: ",e)
+	}
+	http.Serve(l,nil)
+}
+```
+参考代码：[server](/src/ch45rpc/basic/server.go)
+
+client 端
+
+```go
+func TestClient(t *testing.T) {
+	client, err := rpc.DialHTTP("tcp","127.0.0.1:1234")
+	if err != nil {
+		log.Fatal("dialing:", err)
+	}
+
+	//Synchronous call
+	stringReq := &service.StringRequest{"A","B"}
+	var reply string
+	err = client.Call("StringService.Concat",stringReq,&reply)
+	if err != nil {
+		log.Fatal("StringService error:", err)
+	}
+	fmt.Printf("StringService Concat : %s concat %s = %s\n",stringReq.A,stringReq.B,reply)
+
+
+	//async call
+	stringReq = &service.StringRequest{"ACD","BDF"}
+	call := client.Go("StringService.Diff",stringReq,&reply,nil)
+	_ = <-call.Done
+	fmt.Printf("StringService Diff : %s diff %s = %s\n",stringReq.A,stringReq.B,reply)
+}
+```
+
+参考代码：[client_test](/src/ch45rpc/basic/client_test.go)
+
+## 7.2 gRPC
+
+### 7.2.1 安装
+
+grpc的安装过程，随着时间推移，可能有差别。本节文字写于2021-5-11，确保可用。如有问题，请自己参考官网教程。
+
+[grpc官网](https://grpc.io/docs/languages/go/quickstart/)
+
+- Go的安装，安装最新的三个主要版本。安装说明，请参考[Go’s Getting Started guide](https://golang.org/doc/install)
+- Protocol Buffer安装，即protoc，要求是3.0版本。[Protocol Buffer Compiler Installation](https://grpc.io/docs/protoc-installation/)
+  windows环境安装，请下载protoc-3.16.0-win64.zip。[Protocol_离线win版本](https://github.com/protocolbuffers/protobuf/releases/tag/v3.16.0/) 并把路径配置到path环境变量中
+- Go plugins安装
+  * 安装protoc-gen-go和protoc-gen-go-grpc插件
+  ```go
+  go get google.golang.org/protobuf/cmd/protoc-gen-go \
+         google.golang.org/grpc/cmd/protoc-gen-go-grpc
+  ```
+  * 更新到path环境变量中，让protoc可以找到这两个插件。下载后的路径一般在GOPATH路径的bin目录中，例如：C:\Users\ryan\go\bin
+
+### 7.2.2 编译运行
+
+写两个接口的proto文件，两个消息体
+```go
+syntax = "proto3";
+option go_package = "ch45rpc/grpcdemo/pb";
+package pb;
+service StringService{
+    rpc Concat(StringRequest) returns (StringResponse) {}
+    rpc Diff(StringRequest) returns (StringResponse) {}
+}
+message StringRequest {
+    string A = 1;
+    string B = 2;
+}
+message StringResponse {
+    string Ret = 1;
+    string err = 2;
+}
+```
+参考代码：[string.proto](/src/ch45rpc/grpcdemo/pb/string.proto)
+
+**编译**
+```shell
+protoc --go_out=. --go_opt=paths=source_relative \ 
+       --go-grpc_out=. --go-grpc_opt=paths=source_relative \ 
+       pb\string.proto
+```
+
+生成string.pb.go、string_grpc.pb.go两个文件
+
+### 7.2.3 接口实现
+
+**接口实现**
+```go
+type StringService struct{
+	pb.UnsafeStringServiceServer
+}
+func (s *StringService) Concat(ctx context.Context, req *pb.StringRequest) (*pb.StringResponse, error) {
+	if len(req.A)+len(req.B) > StrMaxSize {
+		response := pb.StringResponse{Ret: ""}
+		return &response, nil
+	}
+	response := pb.StringResponse{Ret: req.A + req.B}
+	return &response, nil
+}
+func (s *StringService) Diff(ctx context.Context, req *pb.StringRequest) (*pb.StringResponse, error) {
+	if len(req.A) < 1 || len(req.B) < 1 {
+		response := pb.StringResponse{Ret: ""}
+		return &response, nil
+	}
+	res := ""
+	if len(req.A) >= len(req.B) {
+		for _, char := range req.B {
+			if strings.Contains(req.A, string(char)) {
+				res = res + string(char)
+			}
+		}
+	} else {
+		for _, char := range req.A {
+			if strings.Contains(req.B, string(char)) {
+				res = res + string(char)
+			}
+		}
+	}
+	response := pb.StringResponse{Ret: res}
+	return &response, nil
+}
+```
+参考代码：[service.go](/src/ch45rpc/grpcdemo/string-service/service.go)
+
+**server端**
+```go
+func main() {
+	flag.Parse()
+	lis, err := net.Listen("tcp", "127.0.0.1:1234")
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+	grpcServer := grpc.NewServer()
+	stringService := new(string_service.StringService)
+	pb.RegisterStringServiceServer(grpcServer, stringService)
+	grpcServer.Serve(lis)
+}
+```
+参考代码：[server.go](/src/ch45rpc/grpcdemo/server.go)
+
+**client端**
+
+```go
+func main() {
+	serviceAddress := "127.0.0.1:1234"
+	conn, err := grpc.Dial(serviceAddress, grpc.WithInsecure())
+	if err != nil {
+		panic("connect error")
+	}
+	defer conn.Close()
+	bookClient := pb.NewStringServiceClient(conn)
+	stringReq := &pb.StringRequest{A: "A", B: "B"}
+	reply, _ := bookClient.Concat(context.Background(), stringReq)
+	fmt.Printf("StringService Concat : %s concat %s = %s\n", stringReq.A, stringReq.B, reply.Ret)
+}
+```
+参考代码：[client.go](/src/ch45rpc/grpcdemo/client.go)
+
+## 7.3 gRPC流式编程
+
+gRPC可以定义4中类型的服务接口，分别是一元RPC、服务器流RPC、客户端流式RPC和双向流RPC
+
+- 一元RPC是指客户端向服务器发送请求并获得响应，就像正常的函数调用一样。
+  ```go
+  rpc Concat(StringRequest) returns (StringResponse){}
+  ```
+- 服务器流RPC是指客户端发送一个对象，服务器端返回一个Stream（流式消息）
+  ```go
+  rpc LotsOfServerStream(StringRequest) returns (stream StringResponse){}
+  ```
+- 客户端流式RPC，客户端发送一个stream(流式消息)服务端返回一个对象
+  ```go
+  rpc LotsOfClientStream(Stream StringRequest) returns (StringResponse){}
+  ```
+- 双向流RPC，两个流独立运行。类似WebSocket(长链接)，客户端可以向服务端请求消息，服务端也可以向客户端请求消息
+  ```go
+  rpc LotsOfServerAndClientStream(stream StringRequest) returns (stream StringResponse){}
+  ```
+
+参考代码：[string.proto](/src/ch45rpc/grpcstreamdemo/pb/string.proto)
+
+**编译**
+```shell
+protoc --go_out=. --go_opt=paths=source_relative \ 
+       --go-grpc_out=. --go-grpc_opt=paths=source_relative \ 
+       pb\string.proto
+```
+
+**双向流RPC 服务端**
+```go
+func (s *StringService) LotsOfServerAndClientStream(server pb.StringService_LotsOfServerAndClientStreamServer) error {
+	for {
+		in, err := server.Recv()
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			log.Printf("failed to recv %v", err)
+			return err
+		}
+		server.Send(&pb.StringResponse{Ret: in.A + in.B})
+	}
+	return nil
+}
+```
+参考代码：[service.go](/src/ch45rpc/grpcstreamdemo/string-service/service.go)
+
+**双向流RPC 客户端**
+```go
+func sendClientAndServerStreamRequest(client pb.StringServiceClient) {
+	fmt.Printf("test sendClientAndServerStreamRequest \n")
+	var err error
+	stream, err := client.LotsOfServerAndClientStream(context.Background())
+	if err != nil {
+		log.Printf("failed to call: %v", err)
+		return
+	}
+	var i int
+	for {
+		err1 := stream.Send(&pb.StringRequest{A: strconv.Itoa(i), B: strconv.Itoa(i + 1)})
+		if err1 != nil {
+			log.Printf("failed to send: %v", err)
+			break
+		}
+		reply, err2 := stream.Recv()
+		if err2 != nil {
+			log.Printf("failed to recv: %v", err)
+			break
+		}
+		log.Printf("sendClientAndServerStreamRequest Ret is : %s", reply.Ret)
+		i++
+	}
+}
+```
+参考代码：[client.go](/src/ch45rpc/grpcstreamdemo/client.go)
+
+
+# 8 配置管理
+
+## 8.1 本地化配置viper
+
+配置文件
+```yaml
+RegisterTime: "2019-6-18 10:00:00"
+Address: "Shanghai"
+ResumeInformation:
+  Name: "aoho"
+  Sex: "male"
+  Age: 20
+  Habits:
+    - "Basketball"
+    - "Running"
+
+```
+
+配置类
+```go
+func init() {
+	viper.AutomaticEnv()
+	initDefault()
+
+	if err := viper.ReadInConfig(); err != nil {
+		fmt.Printf("err:%s\n", err)
+	}
+	if err := sub("ResumeInformation", &Resume); err != nil {
+		log.Fatal("Fail to parse config", err)
+	}
+}
+func initDefault() {
+	//设置读取的配置文件
+	viper.SetConfigName("resume_config")
+	//添加读取的配置文件路径
+	viper.AddConfigPath("./ch45config/local/")
+	//windows环境下为%GOPATH，linux环境下为$GOPATH
+	viper.AddConfigPath("E:/qinxiongzhou/go/learning/src/ch45config/local/")
+	//设置配置文件类型
+	viper.SetConfigType("yaml")
+}
+func main() {
+	fmt.Printf(
+		"姓名: %s\n爱好: %s\n性别: %s \n年龄: %d \n",
+		Resume.Name,
+		Resume.Habits,
+		Resume.Sex,
+		Resume.Age,
+	)
+	//反序列化
+	parseYaml(viper.GetViper())
+	fmt.Println(Contains("Basketball", Resume.Habits))
+}
+func Contains(obj interface{}, target interface{}) (bool, error) {
+	targetValue := reflect.ValueOf(target)
+	switch reflect.TypeOf(target).Kind() {
+	case reflect.Slice, reflect.Array:
+		for i := 0; i < targetValue.Len(); i++ {
+			if targetValue.Index(i).Interface() == obj {
+				return true, nil
+			}
+		}
+	case reflect.Map:
+		if targetValue.MapIndex(reflect.ValueOf(obj)).IsValid() {
+			return true, nil
+		}
+	}
+
+	return false, errors.New("not in array")
+}
+type ResumeInformation struct {
+	Name   string
+	Sex    string
+	Age    int
+	Habits []interface{}
+}
+type ResumeSetting struct {
+	RegisterTime      string
+	Address           string
+	ResumeInformation ResumeInformation
+}
+func parseYaml(v *viper.Viper) {
+	var resumeConfig ResumeSetting
+	if err := v.Unmarshal(&resumeConfig); err != nil {
+		fmt.Printf("err:%s", err)
+	}
+	fmt.Println("resume config:\n ", resumeConfig)
+}
+func sub(key string, value interface{}) error {
+	log.Printf("配置文件的前缀为：%v", key)
+	sub := viper.Sub(key)
+	sub.AutomaticEnv()
+	sub.SetEnvPrefix(key)
+	return sub.Unmarshal(value)
+}
+```
+
+运行，可能会出现如下异常
+```shell
+cannot find package "github.com/hashicorp/hcl/hcl/printer" volatiletech/sqlboiler#904
+```
+这个的原因是viper采用Modules的方式，引用的hcl包是v1.0.0版本的。我们的工程，也需要改成modules的方式，否则会使用hcl的最新版本，而最新版本中，并没有printer的包。
+
+**解决方案：**
+项目目录下，执行mod init，生成go.mod文件
+```shell
+>go mod init
+
+go: creating new go.mod: module ch45config/local
+go: to add module requirements and sums:
+        go mod tidy
+```
+
+在生成的go.mod文件中，添加如下
+```go
+require (
+	github.com/spf13/viper v1.7.1
+)
+```
+设置idea：打开Go Modules模块。File>settings>Go>Go Modules
+![goModules.png](/images/goModules.png)
+结果：
+![ExternalLibrariesGoModules.png](/images/ExternalLibrariesGoModules.png)
+
+如果idea没有显示Go Modules模块，请把go.mod文件放到项目根目录上。
+
+# 9 网关
+
+## 9.1 自定义网关
+**关键代码：** 主要是为http.ListenAndServe提供一个proxy的方法
+```go
+
+func main() {
+	//创建反向代理
+	proxy := NewReverseProxy(consulClient, logger)
+	//开始监听
+	go func() {
+		logger.Log("transport", "HTTP", "addr", "9090")
+		errc <- http.ListenAndServe(":9090", proxy)
+	}()
+}
+
+// NewReverseProxy 创建反向代理处理方法
+func NewReverseProxy(client *api.Client, logger log.Logger) *httputil.ReverseProxy {
+
+	//创建Director
+	director := func(req *http.Request) {
+
+		//查询原始请求路径
+		reqPath := req.URL.Path
+		if reqPath == "" {
+			return
+		}
+		//按照分隔符'/'对路径进行分解，获取服务名称serviceName
+		pathArray := strings.Split(reqPath, "/")
+		serviceName := pathArray[1]
+
+		//调用consul api查询serviceName的服务实例列表
+		result, _, err := client.Catalog().Service(serviceName, "", nil)
+		if err != nil {
+			logger.Log("ReverseProxy failed", "query service instance error", err.Error())
+			return
+		}
+
+		if len(result) == 0 {
+			logger.Log("ReverseProxy failed", "no such service instance", serviceName)
+			return
+		}
+
+		//重新组织请求路径，去掉服务名称部分
+		destPath := strings.Join(pathArray[2:], "/")
+
+		//随机选择一个服务实例
+		tgt := result[rand.Int()%len(result)]
+		logger.Log("service id", tgt.ServiceID)
+
+		//设置代理服务地址信息
+		req.URL.Scheme = "http"
+		req.URL.Host = fmt.Sprintf("%s:%d", tgt.ServiceAddress, tgt.ServicePort)
+		req.URL.Path = "/" + destPath
+	}
+	return &httputil.ReverseProxy{Director: director}
+```
+参考代码：[myGateway.go](/src/ch45-gateway/gateway/main.go)
+
+**运行：**
+
+1、运行consul。如有疑惑，请参考6.1章节
+```shell
+consul.exe agent -dev
+```
+查看consul，http://localhost:8500/ui/dc1/services
+
+2、运行service服务。代码在/ch45discover/main.go。
+
+服务运行在10086端口，有say-hello的接口，http://localhost:10086/say-hello ，返回如下
+```json
+{
+  message: "Hello World!"
+}
+```
+
+3、运行网关服务。代码在/ch45-gateway/gateway/main.go。
+
+访问http://localhost:9090/SayHello/say-hello ，返回如下：
+```json
+{
+  message: "Hello World!"
+}
+```
+
+## 9.2 kong网关
+
+**Step 1. Install docker**
+
+```shell
+yum -y install docker
+```
+
+**Step  2. Pull the Kong Gateway Docker image**
+
+Pull the following Docker image:
+```shell
+docker pull kong/kong-gateway:2.3.3.2-alpine
+```
+You should now have your Kong Gateway image locally.
+
+Verify that it worked, and find the image ID matching your repository:
+
+```shell
+docker images
+```
+Tag the image ID for easier use:
+```shell
+docker tag <IMAGE_ID> kong-ee
+```
+Note: Replace <IMAGE_ID> with the one matching your repository.
+
+**Step 3. Create a Docker network**
+
+Create a custom network to allow the containers to discover and communicate with each other.
+```shell
+docker network create kong-ee-net
+```
+
+**Step 4. Start a database**
+
+If created database by docker, please remove the docker container. Otherwise skip.
+
+```shell
+docker rm kong-ee-database
+```
+
+Start a PostgreSQL container:
+
+```shell
+docker run -d --name kong-ee-database \
+  --network=kong-ee-net \
+  -p 5432:5432 \
+  -e "POSTGRES_USER=kong" \
+  -e "POSTGRES_DB=kong" \
+  -e "POSTGRES_PASSWORD=kong" \
+  postgres:9.6
+```
+
+**Step 5. Prepare the Kong database**
+
+```shell
+docker run --rm --network=kong-ee-net \
+  -e "KONG_DATABASE=postgres" \
+  -e "KONG_PG_HOST=kong-ee-database" \
+  -e "KONG_PG_PASSWORD=kong" \
+  -e "KONG_PASSWORD=<SOMETHING-YOU-KNOW>" \
+  kong-ee kong migrations bootstrap
+```
+
+Note: For KONG_PASSWORD, replace <SOMETHING-YOU-KNOW> with a valid password that only you know.
+
+If an error occures, try the following code.
+
+```shell
+docker run --rm --network=kong-ee-net \
+  -e "KONG_DATABASE=postgres" \
+  -e "KONG_PG_HOST=8.136.212.63" \
+  -e "KONG_PG_PASSWORD=kong" \
+  -e "KONG_PASSWORD=ryan1234" \
+  kong-ee kong migrations bootstrap
+```
+
+You can connect the postgreSQL server by the postgreSQL client.
+
+```shell
+psql -h localhost -p 5432 -U kong -d kong
+```
+
+**Step 6. Start the gateway with Kong Manager**
+
+If created database by docker, please remove the docker container. Otherwise skip.
+
+```shell
+docker rm kong-ee
+```
+
+Start:
+
+```shell
+docker run -d --name kong-ee --network=kong-ee-net \
+  -e "KONG_DATABASE=postgres" \
+  -e "KONG_PG_HOST=kong-ee-database" \
+  -e "KONG_PG_PASSWORD=kong" \
+  -e "KONG_PROXY_ACCESS_LOG=/dev/stdout" \
+  -e "KONG_ADMIN_ACCESS_LOG=/dev/stdout" \
+  -e "KONG_PROXY_ERROR_LOG=/dev/stderr" \
+  -e "KONG_ADMIN_ERROR_LOG=/dev/stderr" \
+  -e "KONG_ADMIN_LISTEN=0.0.0.0:8001" \
+  -e "KONG_ADMIN_GUI_URL=http://<DNSorIP>:8002" \
+  -p 8000:8000 \
+  -p 8443:8443 \
+  -p 8001:8001 \
+  -p 8444:8444 \
+  -p 8002:8002 \
+  -p 8445:8445 \
+  -p 8003:8003 \
+  -p 8004:8004 \
+  kong-ee
+```
+
+Note: For KONG_ADMIN_GUI_URL, replace <DNSorIP> with with the DNS name or IP of the Docker host. 
+
+KONG_ADMIN_GUI_URL should have a protocol, for example, http://.
+
+If  an error occures, try the following code.
+
+```shell
+docker run -d --name kong-ee --network=kong-ee-net \
+  -e "KONG_DATABASE=postgres" \
+  -e "KONG_PG_HOST=8.136.212.63" \
+  -e "KONG_PG_PASSWORD=kong" \
+  -e "KONG_PROXY_ACCESS_LOG=/dev/stdout" \
+  -e "KONG_ADMIN_ACCESS_LOG=/dev/stdout" \
+  -e "KONG_PROXY_ERROR_LOG=/dev/stderr" \
+  -e "KONG_ADMIN_ERROR_LOG=/dev/stderr" \
+  -e "KONG_ADMIN_LISTEN=0.0.0.0:8001" \
+  -e "KONG_ADMIN_GUI_URL=http://8.136.212.63:8002" \
+  -p 8000:8000 \
+  -p 8443:8443 \
+  -p 8001:8001 \
+  -p 8444:8444 \
+  -p 8002:8002 \
+  -p 8445:8445 \
+  -p 8003:8003 \
+  -p 8004:8004 \
+  kong-ee
+```
+
+**Step 7. Verify your installation**
+
+Access the /services endpoint using the Admin API:
+
+```shell
+curl -i -X GET --url http://<DNSorIP>:8001/services
+```
+
+You should receive an HTTP/1.1 200 OK message.
+
+Verify that Kong Manager
+
+```shell
+http://<DNSorIP>:8002
+```
+
+**Step 8. 查看页面并验证**
+
+1、dashboard
+
+http://8.136.212.63:8002/default/dashboard
+
+![kong-default.png](/images/kong-default.png)
+
+2、启动一个8080端口的服务
+
+Go写的一个服务，端口是8080
+
+[http_gin下载](/images/http_gin)
+
+```shell
+[root@iZbp1d7m9diff6o0tayjoqZ ~]# ./http_gin &
+[1] 2249
+```
+
+http://8.136.212.63:8080/ping
+
+![kong-ping.png](/images/kong-ping.png)
+
+3、配置kong网关
+
+配置服务
+
+![kong-service.png](/images/kong-service.png)
+
+配置路由
+
+![kong-routes.png](/images/kong-routes.png)
+
+kong默认通过8000端口处理代理请求。
+
+http://8.136.212.63:8000/api/ping
+
+![kong-api-ping.png](/images/kong-api-ping.png)
+
+
 
 

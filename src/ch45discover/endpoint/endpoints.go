@@ -3,7 +3,7 @@ package endpoint
 import (
 	"context"
 	"github.com/go-kit/kit/endpoint"
-	"github.com/longjoy/micro-go-book/ch6-discovery/service"
+	"ch45discover/service"
 )
 
 type DiscoveryEndpoints struct {

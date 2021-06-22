@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 	"errors"
-	"github.com/longjoy/micro-go-book/ch6-discovery/config"
-	"github.com/longjoy/micro-go-book/ch6-discovery/discover"
+	"ch45discover/config"
+	"ch45discover/discover"
 )
 
 type Service interface {
