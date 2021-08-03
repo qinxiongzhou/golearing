@@ -15,7 +15,7 @@ func init() {
 	// set default database
 	orm.RegisterDataBase("default", "mysql", "root:pitaya@tcp(127.0.0.1:3306)/user?charset=utf8")
 
-	// register model
+	// register mode
 	orm.RegisterModel(new(Person))
 
 	// create table

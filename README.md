@@ -1667,18 +1667,29 @@ func main() {
 
 ## 5.3 http_gin
 ```go
-func main() {
+
+func setupRouter() *gin.Engine {
 	r := gin.Default()
 	r.GET("/ping", func(c *gin.Context) {
+		//c.String(200, "pong")
 		c.JSON(200, gin.H{
 			"message": "pong",
 		})
 	})
-	r.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
+	return r
+}
+
+func main() {
+	//去除ACC日志的打印
+	gin.SetMode(gin.ReleaseMode)
+	//gin.DefaultWriter = ioutil.Discard
+
+	r := setupRouter()
+	r.Run(":8080")
 }
 ```
 
-参考代码：[http_gin](/src/ch45/http_gin/http_gin.go)
+参考代码：[http_gin](/src/ch45/http_gin_demo/http_gin.go)
 
 ## 5.4 中间件（类似Java的拦截器）
 
