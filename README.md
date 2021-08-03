@@ -1691,6 +1691,28 @@ func main() {
 
 参考代码：[http_gin](/src/ch45/http_gin_demo/http_gin.go)
 
+```go
+func TestPingRoute(t *testing.T) {
+	router := setupRouter()
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/ping", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, 200, w.Code)
+
+	//assert.Equal(t, "pong", w.Body.String())
+}
+```
+
+执行脚本
+```shell script
+go test -coverprofile=c.out
+go tool cover -html=c.out -o coverage.html
+```
+参考代码：[http_gin_test](/src/ch45/http_gin_demo/http_gin_test.go)
+
+
 ## 5.4 中间件（类似Java的拦截器）
 
 ```go
