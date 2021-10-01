@@ -34,9 +34,43 @@ func TestAccessNotExiststringKey(t *testing.T) {
 	}
 }
 
+//map中放个map
 func TestTravelMap(t *testing.T) {
 	m1 := map[int]int{1: 1, 2: 4, 3: 6}
 	for k, v := range m1 {
 		t.Log(k, v)
 	}
+
+	m2 := map[string]map[string]int{"1": {"1": 1, "1.1": 1}, "2": {"2": 2}}
+	for k, v := range m2 {
+		t.Log(k)
+		for subk, subv := range v {
+			t.Log(subk, subv)
+		}
+	}
+}
+
+type Person struct {
+	age  int
+	name string
+}
+
+//map中存放对象
+func TestStructMap(t *testing.T) {
+	class := map[int]*Person{}
+	p1 := &Person{
+		age:  11,
+		name: "dalei",
+	}
+
+	addage(p1)
+	class[1] = p1
+
+	t.Log(class)
+	t.Log(p1)
+}
+
+func addage(p *Person) *Person {
+	p.age += 1
+	return p
 }

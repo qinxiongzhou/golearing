@@ -15,15 +15,17 @@ func TestImplicit(t *testing.T) {
 	//c = b //Cannot use 'b' (type int64) as type MyInt
 	c = MyInt(b)
 
-	t.Log(a,b,c)
+	t.Log(a, b, c)
 }
 
 func TestPoint(t *testing.T) {
 	a := 1
 	aPrt := &a
 	//aPrt = aPrt +1 //Invalid operation: aPrt +1 (mismatched types *int and untyped int)
-	t.Log(a,aPrt)
-	t.Log("%T %T",a,aPrt)
+	t.Log(a, aPrt)
+	//t.Log("%v %T",a,aPrt)
+	b := &a
+	t.Log(*b)
 }
 
 func TestString(t *testing.T) {
